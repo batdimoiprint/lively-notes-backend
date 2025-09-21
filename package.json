@@ -1,7 +1,7 @@
 {
   "name": "lively-notes-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Express Nodejs backend for Lively Desktop Notes",
   "main": "index.js",
   "scripts": {
     "dev": "node --watch index.js",
