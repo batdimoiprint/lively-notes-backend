@@ -1,18 +1,24 @@
+// Imports
 require('dotenv').config();
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 3000
+
+// CORS
 const cors = require('cors')
 const options = require('./config/corsConfig');
-
-const notesRouter = require('./routes/notesRoutes');
-
-
-app.use(express.json());
-app.use('/api/notes', notesRouter);
 app.use(cors(options))
+// Ports
+const port = process.env.PORT || 3000
 
 
+// Express Json
+app.use(express.json());
+
+// Notes Routes
+const notesRouter = require('./routes/notesRoutes');
+app.use('/api/notes', notesRouter);
+
+// EntryPoint
 app.get('/', (req, res) => {
     res.send('Bakit ka andito')
 })
