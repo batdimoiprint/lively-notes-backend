@@ -1,13 +1,13 @@
 ### Get all notes
-GET http://localhost:4000/api/notes
+GET http://localhost:3000/api/notes
 Accept: application/json
 ### Add a new note
 POST http://localhost:3000/api/notes
 Content-Type: application/json
 
 {
-  "title": "Ako si revie",
-  "body": "Nag deact ako"
+  "title": "Ako si onesimus",
+  "body": "Nag crash out ako"
 }
 
 ### Delete a note
