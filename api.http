@@ -6,18 +6,17 @@ POST http://localhost:3000/api/notes
 Content-Type: application/json
 
 {
-  "title": "Ako si onesimus",
-  "body": "Nag crash out ako"
+  "title": "testing",
+  "body": "testing to be deleted"
 }
 
 ### Delete a note
-DELETE http://localhost:4000/api/notes
+DELETE http://localhost:3000/api/notes
 Content-Type: application/json
 
-{
-  "id": "1753026533272"
-}
-
+   {
+    "_id": "68d6720abb392b1320776431"
+  }
 
 ### Get Color
 GET http://localhost:4000/api/color
