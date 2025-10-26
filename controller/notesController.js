@@ -42,7 +42,7 @@ async function deleteNote(req, res, next) {
 
 async function editNotes(req, res, next) {
   try {
-    console.log(req.body);
+    // console.log(req.body);
     const resourceId = req.body._id;
 
     if (!notesService.isValidObjectId(resourceId)) {
