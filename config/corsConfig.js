@@ -1,6 +1,6 @@
 const options = {
-    origin: ['http://localhost:5500', 'https://df0091eeb1e5193e.localhost'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+  origin: ["http://localhost:5500", process.env.ORIGIN],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
 };
-module.exports = options
+module.exports = options;
