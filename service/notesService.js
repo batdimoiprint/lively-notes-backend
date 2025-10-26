@@ -1,5 +1,5 @@
 const client = require("../db/db.js");
-const { ObjectId } = require('mongodb');
+const { ObjectId } = require("mongodb");
 const myDB = client.db("livelydesktopnotes");
 const notesCollection = myDB.collection("notes");
 
@@ -23,12 +23,38 @@ async function deleteNote(id) {
   const result = await notesCollection.deleteOne({ _id });
   return {
     acknowledged: result.acknowledged,
-    deletedCount: result.deletedCount
+    deletedCount: result.deletedCount,
   };
+}
+
+async function updateNote(payload) {
+  try {
+    if (!ObjectId.isValid(payload._id)) {
+      return { acknowledged: false, modified: 0 };
+    }
+
+    const id = new ObjectId(payload._id);
+    const result = await notesCollection.replaceOne(
+      { _id: id },
+      { title: payload.title, body: payload.body }
+    );
+    return {
+      acknowledged: result.acknowledged,
+      modified: result.modifiedCount,
+    };
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 function isValidObjectId(id) {
   return ObjectId.isValid(id);
 }
 
-module.exports = { getAll, createNote, deleteNote, isValidObjectId };
+module.exports = {
+  getAll,
+  createNote,
+  deleteNote,
+  updateNote,
+  isValidObjectId,
+};

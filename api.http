@@ -4,19 +4,28 @@ Accept: application/json
 ### Add a new note
 POST http://localhost:3000/api/notes
 Content-Type: application/json
-
 {
   "title": "testing",
-  "body": "testing to be deleted"
+  "body": "testing to be edited"
 }
 
 ### Delete a note
 DELETE http://localhost:3000/api/notes
 Content-Type: application/json
+{
+  "_id": "68d6720abb392b1320776431"
+}
 
-   {
-    "_id": "68d6720abb392b1320776431"
-  }
+### Replace Notes
+PUT http://localhost:3000/api/notes
+Content-Type: application/json
+
+{
+  "_id": "68fdd6bd0c14eeb0772e6e0f",
+  "title": "Update Successful",
+  "body": "Update Successful"
+}
+
 
 ### Get Color
 GET http://localhost:4000/api/color
