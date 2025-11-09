@@ -1,5 +1,5 @@
 const options = {
-  origin: ["http://localhost:5500", process.env.ORIGIN],
+  origin: ["http://127.0.0.1:5173", process.env.ORIGIN],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
 };
