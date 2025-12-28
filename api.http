@@ -26,6 +26,36 @@ Content-Type: application/json
   "body": "Update Successful"
 }
 
+### Get Settings
+GET http://localhost:3000/api/settings
+Accept: application/json
+
+### Reset Settings
+POST http://localhost:3000/api/settings
+Content-Type: application/json
+
+{
+  "wavecolor": {
+    "r": "125",
+    "g": "52",
+    "b": "253"
+  },
+  "rainbowSpeed": "0.05",
+  "rainbow": "true",
+  "matrixspeed": "50",
+  "textColor": "#ffffff",
+  "trailOpacity": "0.05",
+  "backgroundColor": "#000000"
+}
+
+### Patch Settings
+PATCH http://localhost:3000/api/settings
+Content-Type: application/json
+
+{
+  "rainbow": "false"
+}
+
 
 ### Get Color
 GET http://localhost:4000/api/color
@@ -57,3 +87,4 @@ Content-Type: application/json
   "stack": "react",
    "projectName": "project{{$timestamp}}"
 }
+

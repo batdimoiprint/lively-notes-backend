@@ -21,6 +21,10 @@ app.use("/api/notes", notesRouter);
 const cloudinaryRouter = require("./routes/cloudinaryRoutes");
 app.use("/api/images", cloudinaryRouter);
 
+// App Settings Routes
+const settingsRouter = require("./routes/settingsRoutes");
+app.use("/api/settings", settingsRouter);
+
 // EntryPoint
 app.get("/", (req, res) => {
   res.send("Bakit ka andito");
