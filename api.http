@@ -36,15 +36,15 @@ Content-Type: application/json
 
 {
   "wavecolor": {
-    "r": "125",
-    "g": "52",
-    "b": "253"
+    "r": 125,
+    "g": 52,
+    "b": 253
   },
-  "rainbowSpeed": "0.05",
-  "rainbow": "true",
-  "matrixspeed": "50",
-  "textColor": "#ffffff",
-  "trailOpacity": "0.05",
+  "rainbowSpeed": 0.05,
+  "rainbow": true,
+  "matrixspeed": 50,
+  "textColor": "#ff0000",
+  "trailOpacity": 0.05,
   "backgroundColor": "#000000"
 }
 
@@ -53,7 +53,7 @@ PATCH http://localhost:3000/api/settings
 Content-Type: application/json
 
 {
-  "rainbow": "false"
+  "rainbow": false
 }
 
 

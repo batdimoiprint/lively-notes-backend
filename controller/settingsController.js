@@ -13,7 +13,7 @@ async function getSettings(req, res, next) {
 async function resetSettings(req, res, next) {
   try {
     const reset = await settingsService.resetSettingsPost(req.body);
-    res.status(205).json(reset);
+    res.status(200).json(reset);
   } catch (error) {
     next(error);
   }
