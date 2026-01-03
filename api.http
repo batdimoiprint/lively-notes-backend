@@ -35,17 +35,11 @@ POST http://localhost:3000/api/settings
 Content-Type: application/json
 
 {
-  "wavecolor": {
-    "r": 125,
-    "g": 52,
-    "b": 253
-  },
   "rainbowSpeed": 0.05,
   "rainbow": true,
   "matrixspeed": 50,
   "textColor": "#ff0000",
-  "trailOpacity": 0.05,
-  "backgroundColor": "#000000"
+  "trailOpacity": 0.05
 }
 
 ### Patch Settings
@@ -53,7 +47,7 @@ PATCH http://localhost:3000/api/settings
 Content-Type: application/json
 
 {
-  "rainbow": false
+  "backgroundColor": "#ffffff"
 }
 
 
