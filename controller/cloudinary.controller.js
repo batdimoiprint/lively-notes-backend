@@ -1,4 +1,4 @@
-const cloudinary = require("../config/cloudinaryConfig");
+const cloudinary = require("../config/cloudinary.config");
 
 const getAllImages = async (req, res) => {
   try {

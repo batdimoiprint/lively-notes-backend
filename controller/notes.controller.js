@@ -1,4 +1,4 @@
-const notesService = require("../service/notesService");
+const notesService = require("../service/notes.service");
 
 async function listNotes(req, res, next) {
   try {
