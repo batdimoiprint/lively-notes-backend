@@ -18,6 +18,11 @@ const port = process.env.PORT || 3000;
 // Express Json
 app.use(express.json());
 
+// Backend Waker
+app.get("/api/wake", (req, res) => {
+  res.status(200).send();
+})
+
 // Auth Route
 const authRouter = require("./routes/auth.routes.js")
 app.use("/api/auth", authRouter)
@@ -38,7 +43,6 @@ app.use("/api/settings", settingsRouter);
 
 // Swagger
 const swaggerSpec = swaggerJsdoc(swaggerConfig.options);
-
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.listen(port, () => {
