@@ -2,7 +2,7 @@ const client = require("../db/db.js");
 const myDB = client.db("livelydesktopnotes");
 const userCollection = myDB.collection("user");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+const { generateJWT } = require("../middleware/jwt.config.js");
 
 async function login(req, res) {
   try {
@@ -22,12 +22,20 @@ async function login(req, res) {
         res.status(400).send();
       } else {
         const user = hashedPassword[0]._id.toString();
-        const token = jwt.sign({ userId: user }, process.env.JWT_SECRET, {
-          algorithm: "HS256",
-          expiresIn: "1d"
+        const token = generateJWT({ userId: user });
+
+        res.cookie("JWT_KEY", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "strict",
+          maxAge: 3600000,
         });
-        
-        res.status(200).json({ message: "Success", jwt: token });
+
+        res.status(200).json({ message: "Success" });
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("Development Token:" , token);
+        }
       }
     }
   } catch (error) {

@@ -14,14 +14,14 @@ const options = {
     ],
     components: {
       securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
+        cookieAuth: {
+          type: "apiKey",
+          in: "cookie",
+          name: "JWT_KEY"
         },
       },
     },
-    security: [{ bearerAuth: [] }],
+    security: [{cookieAuth: [] }],
   },
 
   // Change './routes/*.js' to match your file structure.

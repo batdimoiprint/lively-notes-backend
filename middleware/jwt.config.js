@@ -1,10 +1,18 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+
+function generateJWT(payload) {
+  const token = jwt.sign(payload, process.env.JWT_SECRET, {
+    algorithm: "HS256",
+    expiresIn: "1d",
+  });
+  return token;
+}
 
 function authJWT(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (authHeader) {
-    const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  const cookie = req.cookies.JWT_KEY;
+
+  if (cookie) {
+    jwt.verify(cookie, process.env.JWT_SECRET, (err, user) => {
       if (err) return res.sendStatus(403);
       req.user = user;
       next();
@@ -14,4 +22,4 @@ function authJWT(req, res, next) {
   }
 }
 
-module.exports = {authJWT}
+module.exports = { authJWT, generateJWT };

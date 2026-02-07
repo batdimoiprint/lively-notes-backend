@@ -19,8 +19,10 @@ const app = express();
 const cors = require("cors");
 const options = require("./config/cors.config.js");
 app.use(cors(options));
-// Ports
-const port = process.env.PORT || 3000;
+
+// Cookies Parser
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
 
 // Express Json
 app.use(express.json());
@@ -45,14 +47,14 @@ app.use("/api/images", authJWT, cloudinaryRouter);
 const settingsRouter = require("./routes/settings.routes.js");
 app.use("/api/settings", authJWT, settingsRouter);
 
-// TODO: Add JWT Token Generation and Protect All Routes with JWT
-
 // Swagger
 const swaggerSpec = swaggerJsdoc(swaggerConfig.options);
-
 if (process.env.NODE_ENV === "development") {
   app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
+
+// Ports
+const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
