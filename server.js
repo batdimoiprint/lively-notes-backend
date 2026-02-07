@@ -1,5 +1,11 @@
 // Imports
-require("dotenv").config();
+const envFile =
+  process.env.NODE_ENV === "production"
+    ? ".env"
+    : process.env.NODE_ENV === "staging"
+    ? ".env.staging"
+    : ".env.local";
+require("dotenv").config({ path: envFile });
 const express = require("express");
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
@@ -43,7 +49,10 @@ app.use("/api/settings", settingsRouter);
 
 // Swagger
 const swaggerSpec = swaggerJsdoc(swaggerConfig.options);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+if (process.env.NODE_ENV === "development") {
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));  
+} 
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
