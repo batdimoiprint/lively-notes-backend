@@ -1,6 +1,6 @@
 
 const options = {
-  allowedOrigins: process.env.NODE_ENV === "production"
+  origins: process.env.NODE_ENV === "production"
     ? [process.env.ORIGIN]
     : [ "http://127.0.0.1:5173",
         "http://localhost:3000",],
