@@ -2,6 +2,7 @@ const client = require("../db/db.js");
 const myDB = client.db("livelydesktopnotes");
 const userCollection = myDB.collection("user");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 async function login(req, res) {
   try {
@@ -19,10 +20,14 @@ async function login(req, res) {
 
       if (!isMatch) {
         res.status(400).send();
-        console.log("login Failed");
       } else {
-        res.status(200).send();
-        console.log("login success");
+        const user = hashedPassword[0]._id.toString();
+        const token = jwt.sign({ userId: user }, process.env.JWT_SECRET, {
+          algorithm: "HS256",
+          expiresIn: "1d"
+        });
+        
+        res.status(200).json({ message: "Success", jwt: token });
       }
     }
   } catch (error) {

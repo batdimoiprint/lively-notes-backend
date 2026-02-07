@@ -22,5 +22,8 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-dist": "^5.31.0",
     "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10"
   }
 }

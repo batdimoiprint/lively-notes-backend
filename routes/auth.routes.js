@@ -1,6 +1,6 @@
 const express = require("express");
 const authController = require("../controller/auth.controller");
-
+const { authJWT } = require("../middleware/jwt.config.js");
 const router = express.Router();
 
 /**
@@ -52,7 +52,7 @@ router.post("/login", authController.login)
  *       400:
  *         description: Invalid input
  */
-router.post("/register", authController.register)
+router.post("/register", authJWT, authController.register)
 
 
 module.exports = router;
