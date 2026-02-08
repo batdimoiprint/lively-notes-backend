@@ -45,7 +45,7 @@ app.use("/api/images", authJWT, cloudinaryRouter);
 
 // App Settings Routes
 const settingsRouter = require("./routes/settings.routes.js");
-app.use("/api/settings", authJWT, settingsRouter);
+app.use("/api/settings", settingsRouter);
 
 // Swagger
 const swaggerSpec = swaggerJsdoc(swaggerConfig.options);

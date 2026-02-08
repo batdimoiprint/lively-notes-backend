@@ -1,5 +1,6 @@
 const express = require("express");
 const settingsController = require("../controller/settings.controller");
+const { authJWT } = require("../middleware/jwt.config");
 const router = express.Router();
 
 /**
@@ -48,7 +49,7 @@ router.get("/", settingsController.getSettings);
  *       200:
  *         description: Settings reset
  */
-router.post("/", settingsController.resetSettings);
+router.post("/",authJWT, settingsController.resetSettings);
 
 /**
  * @swagger
@@ -71,6 +72,6 @@ router.post("/", settingsController.resetSettings);
  *       200:
  *         description: Settings patched
  */
-router.patch("/", settingsController.patchSettings);
+router.patch("/",authJWT, settingsController.patchSettings);
 
 module.exports = router;

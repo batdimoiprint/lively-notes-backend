@@ -16,7 +16,7 @@ function authJWT(req, res, next) {
     jwt.verify(cookie, process.env.JWT_SECRET, (err, user) => {
       if (err) return res.sendStatus(403);
       req.user = user;
-      console.log(req.user.userId);
+      // console.log(req.user.userId);
       next();
     });
   } else {
