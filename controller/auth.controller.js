@@ -27,7 +27,7 @@ async function login(req, res) {
         res.cookie("JWT_KEY", token, {
           httpOnly: true,
           secure: true,
-          sameSite: "strict",
+          sameSite: "None",
           
           maxAge: 24 * 60 * 60 * 1000,
         });
