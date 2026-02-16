@@ -1,19 +1,22 @@
 const jwt = require("jsonwebtoken");
 
-function generateJWT(payload) {
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    algorithm: "HS256",
-    expiresIn: "1d",
+function generateAccessToken(payload) {
+  return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: "15m",
   });
+}
 
-  return token;
+function generateRefreshToken(payload) {
+  return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: "7d",
+  });
 }
 
 function authJWT(req, res, next) {
-  const cookie = req.cookies.JWT_KEY;
+  const cookie = req.cookies.access_token;
 
   if (cookie) {
-    jwt.verify(cookie, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(cookie, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
       if (err) return res.sendStatus(403);
       req.user = user;
       // console.log(req.user.userId);
@@ -25,7 +28,6 @@ function authJWT(req, res, next) {
 }
 
 function refreshJWT(req, res, next) {
-
   if (req.user && req.user.userId) {
     const newToken = jwt.sign(
       { userId: req.user.userId },
@@ -40,7 +42,7 @@ function refreshJWT(req, res, next) {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
- 
+
       maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -56,7 +58,7 @@ function refreshJWT(req, res, next) {
 
 function removeCookie(req, res, next) {
   if (req.user && req.user.userId) {
-    res.clearCookie("JWT_KEY", {
+    res.clearCookie("ACCESS_TOKEN_SECRET", {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
@@ -67,4 +69,10 @@ function removeCookie(req, res, next) {
   }
 }
 
-module.exports = { authJWT, generateJWT, refreshJWT, removeCookie };
+module.exports = {
+  authJWT,
+  refreshJWT,
+  removeCookie,
+  generateAccessToken,
+  generateRefreshToken,
+};
