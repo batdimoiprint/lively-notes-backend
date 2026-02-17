@@ -12,47 +12,57 @@ function generateRefreshToken(payload) {
   });
 }
 
-function authJWT(req, res, next) {
-  const cookie = req.cookies.access_token;
+async function authJWT(req, res, next) {
+  const access_token = req.cookies.access_token;
+  if (!access_token)
+    return res.status(401).json({ message: "No Access Token" });
+  try {
+    const user = await jwt.verify(
+      access_token,
+      process.env.ACCESS_TOKEN_SECRET,
+    );
 
-  if (cookie) {
-    jwt.verify(cookie, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-      if (err) return res.sendStatus(403);
-      req.user = user;
-      // console.log(req.user.userId);
-      next();
-    });
-  } else {
-    res.sendStatus(401);
+    req.user = user;
+    // console.log(req.user.userId);
+    next();
+  } catch (error) {
+    res.status(403).json({ message: "Invalid Token" });
   }
 }
 
-function refreshJWT(req, res, next) {
-  if (req.user && req.user.userId) {
-    const newToken = jwt.sign(
-      { userId: req.user.userId },
-      process.env.JWT_SECRET,
-      {
-        algorithm: "HS256",
-        expiresIn: "1d",
-      },
-    );
+async function refreshJWT(req, res) {
+  const refresh_token = req.cookies.refresh_token;
 
-    res.cookie("JWT_KEY", newToken, {
+  if (!refresh_token) {
+    return res.status(401).json({ message: "No Refresh Token" });
+  }
+
+  try {
+    const user = await jwt.verify(
+      refresh_token,
+      process.env.REFRESH_TOKEN_SECRET,
+    );
+    // Refresh Access Token
+    const newAccessToken = generateAccessToken({ userId: user.userId });
+    res.cookie("access_token", newAccessToken, {
+      httpOnly: false,
+      secure: true,
+      sameSite: "None",
+
+      maxAge: 15 * 60 * 1000,
+    });
+    // Refresh Access Token
+    const newRefreshToken = generateRefreshToken({ userId: user.userId });
+    res.cookie("refresh_token", newRefreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "None",
 
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 168 * 60 * 60 * 1000,
     });
-
-    if (process.env.NODE_ENV === "development") {
-      console.log("Development Token:", newToken);
-    }
-
-    res.status(200).json({ message: "Token Refresh" });
-  } else {
-    res.sendStatus(401);
+    res.status(200).json({ message: "Token Refreshed" });
+  } catch (error) {
+    res.status(401).json({ message: "Invalid Refresh Token" });
   }
 }
 

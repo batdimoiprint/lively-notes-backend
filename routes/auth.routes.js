@@ -1,6 +1,10 @@
 const express = require("express");
 const authController = require("../controller/auth.controller");
-const { authJWT, refreshJWT, removeCookie } = require("../middleware/jwt.config.js");
+const {
+  authJWT,
+  refreshJWT,
+  removeCookie,
+} = require("../middleware/jwt.config.js");
 const router = express.Router();
 
 /**
@@ -29,8 +33,7 @@ const router = express.Router();
  *       400:
  *         description: Wrong passkey or bad request
  */
-router.post("/login", authController.login)
-
+router.post("/login", authController.login);
 
 /**
  * @swagger
@@ -58,7 +61,20 @@ router.post("/login", authController.login)
  *       400:
  *         description: Invalid input
  */
-router.post("/register", authController.register)
+router.post("/register", authController.register);
+
+/**
+ * @swagger
+ * /api/notes:
+ *   get:
+ *     tags:
+ *       - Auth
+ *     summary: Get Me Data
+ *     responses:
+ *       200:
+ *         description: Me
+ */
+router.get("/me", authController.getMe);
 
 /**
  * @swagger
@@ -78,7 +94,7 @@ router.post("/register", authController.register)
  *       403:
  *         description: Invalid or expired token
  */
-router.post("/refresh", authJWT, refreshJWT)
+router.post("/refresh", authJWT, refreshJWT);
 
 /**
  * @swagger
@@ -96,7 +112,6 @@ router.post("/refresh", authJWT, refreshJWT)
  *       401:
  *         description: No cookie provided
  */
-router.post("/logout", authJWT, removeCookie)
-
+router.post("/logout", authJWT, removeCookie);
 
 module.exports = router;

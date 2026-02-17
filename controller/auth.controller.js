@@ -29,7 +29,7 @@ async function login(req, res) {
         const refreshToken = generateRefreshToken({ userId: user });
 
         res.cookie("access_token", accessToken, {
-          httpOnly: true,
+          httpOnly: false,
           secure: true,
           sameSite: "None",
 
@@ -75,4 +75,13 @@ async function register(req, res) {
   }
 }
 
-module.exports = { register, login };
+async function getMe(req, res) {
+  try {
+    res.status(200).json({ userId: req.user.userId });
+  } catch (error) {
+    res.status(403);
+    throw error;
+  }
+}
+
+module.exports = { register, login, getMe };
