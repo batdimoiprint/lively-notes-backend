@@ -14,7 +14,7 @@ async function createNote(req, res, next) {
   try {
     // console.log(req.body)
     const create = await notesService.createNote(req.body);
-    res.status(201).json(create);
+    res.status(201).json({"message":"Success"});
   } catch (err) {
     next(err);
   }

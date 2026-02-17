@@ -65,7 +65,7 @@ router.post("/register", authController.register);
 
 /**
  * @swagger
- * /api/notes:
+ * /api/auth/me:
  *   get:
  *     tags:
  *       - Auth
@@ -74,7 +74,7 @@ router.post("/register", authController.register);
  *       200:
  *         description: Me
  */
-router.get("/me", authController.getMe);
+router.get("/me", authJWT, authController.getMe);
 
 /**
  * @swagger
@@ -94,7 +94,7 @@ router.get("/me", authController.getMe);
  *       403:
  *         description: Invalid or expired token
  */
-router.post("/refresh", authJWT, refreshJWT);
+router.post("/refresh",  refreshJWT);
 
 /**
  * @swagger
