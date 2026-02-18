@@ -32,4 +32,17 @@ const getImagesByFolder = async (req, res) => {
   }
 };
 
-module.exports = { getAllImages, getImagesByFolder };
+const uploadScrappedPictures = async (req, res) => {
+  try {
+    const result = await cloudinary.uploader.upload(req.image, {
+      folder: req.folder,
+    });
+
+    // console.log(result.secure_url + result.public_id);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+module.exports = { getAllImages, getImagesByFolder, uploadScrappedPictures };

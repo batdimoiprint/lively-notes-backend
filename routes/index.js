@@ -20,6 +20,10 @@ const registerRoutes = (app) => {
   // App Settings Routes
   const settingsRouter = require("./settings.routes.js");
   app.use("/api/settings", settingsRouter);
+
+  // Apify Routes
+  const apifyRouter = require("./apify.routes.js");
+  app.use("/api/apify", apifyRouter);
 };
 
 module.exports = registerRoutes;
