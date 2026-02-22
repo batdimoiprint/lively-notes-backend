@@ -33,7 +33,16 @@ registerRoutes(app);
 // Swagger
 const swaggerSpec = swaggerJsdoc(swaggerConfig.options);
 if (process.env.NODE_ENV === "development") {
-  app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use(
+    "/",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      requestInterceptor: (request) => {
+        request.credentials = "include";
+        return request;
+      },
+    }),
+  );
 }
 
 // Ports

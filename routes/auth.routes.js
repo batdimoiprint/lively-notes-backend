@@ -13,8 +13,8 @@ const router = express.Router();
  *   post:
  *     tags:
  *       - Auth
- *     summary: Login and set JWT cookie
- *     description: Authenticates a user using a passcode and sets an httpOnly cookie named `JWT_KEY` on success.
+ *     summary: Login and set JWT cookies
+ *     description: Authenticates a user using a passcode and sets `access_token` and `refresh_token` cookies on success.
  *     requestBody:
  *       required: true
  *       content:
@@ -29,7 +29,15 @@ const router = express.Router();
  *                 example: "123456"
  *     responses:
  *       200:
- *         description: Login successful, JWT cookie set (Set-Cookie header)
+ *         description: Login successful, JWT cookies set
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Success"
  *       400:
  *         description: Wrong passkey or bad request
  */
@@ -69,10 +77,25 @@ router.post("/register", authController.register);
  *   get:
  *     tags:
  *       - Auth
- *     summary: Get Me Data
+ *     summary: Get current user data
+ *     description: Returns the user ID of the currently authenticated user.
+ *     security:
+ *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Me
+ *         description: User data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 userId:
+ *                   type: string
+ *                   example: "60d5ec49f1b2c8b1f8e4e1a2"
+ *       401:
+ *         description: Invalid Token
+ *       403:
+ *         description: No Access Token
  */
 router.get("/me", authJWT, authController.getMe);
 
@@ -82,17 +105,25 @@ router.get("/me", authJWT, authController.getMe);
  *   post:
  *     tags:
  *       - Auth
- *     summary: Refresh JWT cookie
- *     description: Verifies the current JWT cookie and issues a new one with a renewed expiry.
+ *     summary: Refresh JWT cookies
+ *     description: Verifies the current `refresh_token` cookie and issues new `access_token` and `refresh_token` cookies.
  *     security:
  *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Token refreshed and new cookie set
+ *         description: Tokens refreshed and new cookies set
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Token Refreshed"
  *       401:
- *         description: No cookie provided
+ *         description: No Refresh Token
  *       403:
- *         description: Invalid or expired token
+ *         description: Invalid Refresh Token
  */
 router.post("/refresh",  refreshJWT);
 
@@ -102,15 +133,23 @@ router.post("/refresh",  refreshJWT);
  *   post:
  *     tags:
  *       - Auth
- *     summary: Logout and clear JWT cookie
- *     description: Clears the `JWT_KEY` cookie on the client.
+ *     summary: Logout user
+ *     description: Clears the JWT cookies.
  *     security:
  *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Logged out, cookie cleared
+ *         description: Logged out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Logged out"
  *       401:
- *         description: No cookie provided
+ *         description: Unauthorized
  */
 router.post("/logout", authJWT, removeCookie);
 

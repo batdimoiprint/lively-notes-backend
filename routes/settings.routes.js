@@ -10,9 +10,27 @@ const router = express.Router();
  *     tags:
  *       - Settings
  *     summary: Get settings
+ *     description: Retrieves the current application settings.
  *     responses:
  *       200:
- *         description: Current settings
+ *         description: Current settings retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   rainbowSpeed:
+ *                     type: number
+ *                   rainbow:
+ *                     type: boolean
+ *                   matrixspeed:
+ *                     type: number
+ *                   textColor:
+ *                     type: string
+ *                   trailOpacity:
+ *                     type: number
  */
 router.get("/", settingsController.getSettings);
 
@@ -23,6 +41,9 @@ router.get("/", settingsController.getSettings);
  *     tags:
  *       - Settings
  *     summary: Reset settings
+ *     description: Drops the current settings and inserts the provided payload. Requires authentication.
+ *     security:
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -47,7 +68,15 @@ router.get("/", settingsController.getSettings);
  *                 example: 0.05
  *     responses:
  *       200:
- *         description: Settings reset
+ *         description: Settings reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 router.post("/",authJWT, settingsController.resetSettings);
 
@@ -58,6 +87,9 @@ router.post("/",authJWT, settingsController.resetSettings);
  *     tags:
  *       - Settings
  *     summary: Patch settings
+ *     description: Updates specific fields in the settings. Requires authentication.
+ *     security:
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -69,8 +101,12 @@ router.post("/",authJWT, settingsController.resetSettings);
  *                 type: string
  *                 example: "#ffffff"
  *     responses:
- *       200:
- *         description: Settings patched
+ *       204:
+ *         description: Settings patched successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 router.patch("/",authJWT, settingsController.patchSettings);
 

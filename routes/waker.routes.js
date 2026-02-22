@@ -7,9 +7,10 @@ const router = express.Router();
  *     tags:
  *       - Wake
  *     summary: Wake Backend
+ *     description: A simple endpoint to wake up the backend service.
  *     responses:
  *       200:
- *         description: Success
+ *         description: Backend is awake
  */
 router.get("/",(req, res) => {
   res.status(200).send();

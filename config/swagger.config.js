@@ -17,7 +17,7 @@ const options = {
         cookieAuth: {
           type: "apiKey",
           in: "cookie",
-          name: "JWT_KEY"
+          name: "access_token"
         },
       },
     },

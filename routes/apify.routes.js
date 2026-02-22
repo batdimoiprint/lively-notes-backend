@@ -8,10 +8,21 @@ const apifyController = require("../controller/apify.controller");
  *   get:
  *     tags:
  *       - Apify
- *     summary: Get all images
+ *     summary: Scrape and upload pictures
+ *     description: Fetches images from Apify dataset and uploads them to Cloudinary folders (Sana, Momo, Liz).
  *     responses:
  *       200:
- *         description: List of images
+ *         description: Images successfully scraped and stored
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Images Stored All to sana only for now"
+ *       500:
+ *         description: Internal server error
  */
 router.get("/", apifyController.getScrappedPictures);
 
