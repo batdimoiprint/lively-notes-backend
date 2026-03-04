@@ -1,5 +1,10 @@
 const cloudinary = require("../config/cloudinary.config");
 
+function randomizer(id) {
+  const randomId = Math.floor(Math.random() * id.length);
+  return id[randomId];
+}
+
 const getAllImages = async (req, res) => {
   try {
     const result = await cloudinary.api.resources({
@@ -21,9 +26,16 @@ const getImagesByFolder = async (req, res) => {
     const result = await cloudinary.api.resources_by_asset_folder(folderName, {
       type: "upload",
       max_results: 500,
+      direction: "desc",
     });
-    const publicIds = result.resources.map((img) => img.public_id);
-    res.json(publicIds);
+
+    const publicIds = result.resources.map(
+      (img) => img.public_id,
+      // console.log(img.created_at);
+    );
+
+    console.log(randomizer(publicIds));
+    res.json(randomizer(publicIds));
   } catch (error) {
     console.error(error);
     res
@@ -38,7 +50,8 @@ const uploadScrappedPictures = async (req, res) => {
       folder: req.folder,
     });
 
-    // console.log(result.secure_url + result.public_id);
+    console.log(result.secure_url + result.public_id);
+    return result;
   } catch (error) {
     console.log(error);
     throw error;

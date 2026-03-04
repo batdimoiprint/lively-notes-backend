@@ -23,7 +23,12 @@ const registerRoutes = (app) => {
 
   // Apify Routes
   const apifyRouter = require("./apify.routes.js");
-  app.use("/api/apify", apifyRouter);
+  app.use("/api/apify", authJWT, apifyRouter);
+
+  // IGPosts Routes
+  const igpostRouter = require("./igpost.routes.js");
+  app.use("/api/igpost", authJWT, igpostRouter);
+
 };
 
 module.exports = registerRoutes;

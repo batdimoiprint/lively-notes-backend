@@ -1,8 +1,16 @@
 const jwt = require("jsonwebtoken");
+let accessTokenExpiry = "15m";
+let accessTokenCookieMaxAge = 15 * 60 * 1000;
+let refreshTokenCookieMaxAge = 7 * 24 * 60 * 60 * 1000;
+
+if (process.env.NODE_ENV === "development") {
+  accessTokenExpiry = "7d";
+  accessTokenCookieMaxAge = 7 * 24 * 60 * 60 * 1000;
+}
 
 function generateAccessToken(payload) {
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "15m",
+    expiresIn: accessTokenExpiry,
   });
 }
 
@@ -48,7 +56,7 @@ async function refreshJWT(req, res) {
       httpOnly: false,
       secure: true,
       sameSite: "None",
-      maxAge: 15 * 60 * 1000,
+      maxAge: accessTokenCookieMaxAge,
     });
     console.log("New Access Token " + newAccessToken);
     // Refresh Refresh Token
@@ -57,7 +65,7 @@ async function refreshJWT(req, res) {
       httpOnly: true,
       secure: true,
       sameSite: "None",
-      maxAge: 7 * 60 * 60 * 60 * 1000,
+      maxAge: refreshTokenCookieMaxAge,
     });
     console.log("New Access Token " + newRefreshToken);
     res.status(200).json({ message: "Token Refreshed" });
@@ -79,10 +87,18 @@ function removeCookie(req, res, next) {
   }
 }
 
+function getTokenMaxAges() {
+  return {
+    accessTokenCookieMaxAge,
+    refreshTokenCookieMaxAge,
+  };
+}
+
 module.exports = {
   authJWT,
   refreshJWT,
   removeCookie,
   generateAccessToken,
   generateRefreshToken,
+  getTokenMaxAges,
 };
