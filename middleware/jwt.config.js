@@ -53,7 +53,7 @@ async function refreshJWT(req, res) {
     // Refresh Access Token
     const newAccessToken = generateAccessToken({ userId: user.userId });
     res.cookie("access_token", newAccessToken, {
-      httpOnly: false,
+      httpOnly: true,
       secure: true,
       sameSite: "None",
       maxAge: accessTokenCookieMaxAge,
@@ -76,10 +76,15 @@ async function refreshJWT(req, res) {
 
 function removeCookie(req, res, next) {
   if (req.user && req.user.userId) {
-    res.clearCookie("ACCESS_TOKEN_SECRET", {
+    res.clearCookie("access_token", {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "None",
+    });
+    res.clearCookie("refresh_token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
     });
     res.status(200).json({ message: "Logged out" });
   } else {

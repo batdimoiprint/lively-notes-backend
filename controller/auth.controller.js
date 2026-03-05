@@ -31,7 +31,7 @@ async function login(req, res) {
         const { accessTokenCookieMaxAge, refreshTokenCookieMaxAge } = getTokenMaxAges();
 
         res.cookie("access_token", accessToken, {
-          httpOnly: false,
+          httpOnly: true,
           secure: true,
           sameSite: "None",
           maxAge: accessTokenCookieMaxAge,
