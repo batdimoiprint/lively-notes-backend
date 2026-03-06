@@ -5,8 +5,11 @@ const bcrypt = require("bcrypt");
 const {
   generateAccessToken,
   generateRefreshToken,
-  getTokenMaxAges,
 } = require("../middleware/jwt.config.js");
+const {
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
+} = require("../middleware/cookie.config.js");
 
 async function login(req, res) {
   try {
@@ -28,21 +31,8 @@ async function login(req, res) {
         const user = hashedPassword[0]._id.toString();
         const accessToken = generateAccessToken({ userId: user });
         const refreshToken = generateRefreshToken({ userId: user });
-        const { accessTokenCookieMaxAge, refreshTokenCookieMaxAge } = getTokenMaxAges();
-
-        res.cookie("access_token", accessToken, {
-          httpOnly: false,
-          secure: true,
-          sameSite: "None",
-          maxAge: accessTokenCookieMaxAge,
-        });
-
-        res.cookie("refresh_token", refreshToken, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "None",
-          maxAge: refreshTokenCookieMaxAge,
-        });
+        res.cookie("access_token", accessToken, getAccessTokenCookieOptions());
+        res.cookie("refresh_token", refreshToken, getRefreshTokenCookieOptions());
 
         res.status(200).json({ message: "Success" });
 

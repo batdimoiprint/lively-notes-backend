@@ -1,12 +1,11 @@
 const jwt = require("jsonwebtoken");
-let accessTokenExpiry = "15m";
-let accessTokenCookieMaxAge = 15 * 60 * 1000;
-let refreshTokenCookieMaxAge = 7 * 24 * 60 * 60 * 1000;
-
-if (process.env.NODE_ENV === "development") {
-  accessTokenExpiry = "7d";
-  accessTokenCookieMaxAge = 7 * 24 * 60 * 60 * 1000;
-}
+const {
+  accessTokenCookieMaxAge,
+  refreshTokenCookieMaxAge,
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
+} = require("./cookie.config.js");
+let accessTokenExpiry = process.env.NODE_ENV === "development" ? "7d" : "15m";
 
 function generateAccessToken(payload) {
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
@@ -52,21 +51,11 @@ async function refreshJWT(req, res) {
     );
     // Refresh Access Token
     const newAccessToken = generateAccessToken({ userId: user.userId });
-    res.cookie("access_token", newAccessToken, {
-      httpOnly: false,
-      secure: true,
-      sameSite: "None",
-      maxAge: accessTokenCookieMaxAge,
-    });
+    res.cookie("access_token", newAccessToken, getAccessTokenCookieOptions());
     console.log("New Access Token " + newAccessToken);
     // Refresh Refresh Token
     const newRefreshToken = generateRefreshToken({ userId: user.userId });
-    res.cookie("refresh_token", newRefreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: refreshTokenCookieMaxAge,
-    });
+    res.cookie("refresh_token", newRefreshToken, getRefreshTokenCookieOptions());
     console.log("New Access Token " + newRefreshToken);
     res.status(200).json({ message: "Token Refreshed" });
   } catch (error) {
@@ -76,11 +65,8 @@ async function refreshJWT(req, res) {
 
 function removeCookie(req, res, next) {
   if (req.user && req.user.userId) {
-    res.clearCookie("ACCESS_TOKEN_SECRET", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-    });
+    res.clearCookie("access_token", getAccessTokenCookieOptions());
+    res.clearCookie("refresh_token", getRefreshTokenCookieOptions());
     res.status(200).json({ message: "Logged out" });
   } else {
     res.sendStatus(401);
