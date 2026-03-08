@@ -9,8 +9,8 @@ const refreshTokenCookieMaxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
 function getAccessTokenCookieOptions() {
   return {
     httpOnly: true,
-    secure: true,
-    sameSite: "Strict",
+    secure: !isDev,
+    sameSite: isDev ? "Lax" : "Strict",
     maxAge: accessTokenCookieMaxAge,
   };
 }
@@ -18,8 +18,8 @@ function getAccessTokenCookieOptions() {
 function getRefreshTokenCookieOptions() {
   return {
     httpOnly: true,
-    secure: true,
-    sameSite: "Strict",
+    secure: !isDev,
+    sameSite: isDev ? "Lax" : "Strict",
     maxAge: refreshTokenCookieMaxAge,
   };
 }
