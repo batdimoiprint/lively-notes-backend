@@ -15,7 +15,7 @@ async function runInstagramActor(username) {
   return apify_client.actor(APIFY_ACTOR_ID).call({
     addParentData: false,
     directUrls: [buildInstagramProfileUrl(username)],
-    onlyPostsNewerThan: "1 day",
+    onlyPostsNewerThan: "1 week",
     resultsLimit: 1,
     resultsType: "posts",
     searchType: "user",
@@ -131,17 +131,29 @@ async function runActor(req, res) {
     const run = await runInstagramActor(username.trim());
     const items = await getActorItems(run.defaultDatasetId);
 
-    if (items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
       return res.status(404).json({
         message: "No posts were returned for this username",
       });
     }
 
+    // Only proceed if items is non-empty
     const filtered = mapActorItems(items);
+    if (!Array.isArray(filtered) || filtered.length === 0) {
+      return res.status(404).json({
+        message: "No valid posts to process for this username",
+      });
+    }
 
     const postsWithCloudinary = await Promise.all(
       filtered.map(uploadPostToCloudinary),
     );
+
+    if (!Array.isArray(postsWithCloudinary) || postsWithCloudinary.length === 0) {
+      return res.status(404).json({
+        message: "No posts to store after Cloudinary upload",
+      });
+    }
 
     await persistPosts(postsWithCloudinary);
 

@@ -56,7 +56,7 @@ async function register(req, res) {
     const passkey = await req.body.code;
     const hashedPasskey = await bcrypt.hash(passkey, 12);
     console.log(hashedPasskey);
-    await userCollection.insertOne({ code: hashedPasskey });
+    await userCollection.insertOne({ code: hashedPasskey, igUsernames: [], pomodoroSound: null });
 
     res.status(201).send();
   } catch (error) {

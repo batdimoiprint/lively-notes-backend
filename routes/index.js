@@ -33,6 +33,10 @@ const registerRoutes = (app) => {
   const igpostRouter = require("./igpost.routes.js");
   app.use("/api/igpost", authJWT, igpostRouter);
 
+  // Pomodoro Sound Routes
+  const soundRouter = require("./sound.routes.js");
+  app.use("/api/sound", soundRouter);
+
 };
 
 module.exports = registerRoutes;
