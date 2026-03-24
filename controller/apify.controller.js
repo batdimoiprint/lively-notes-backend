@@ -5,6 +5,66 @@ const client = require("../db/db.js");
 const myDB = client.db("livelydesktopnotes");
 const ig_posts_collection = myDB.collection("ig_posts");
 
+const APIFY_ACTOR_ID = "apify/instagram-scraper";
+
+function buildInstagramProfileUrl(username) {
+  return `https://www.instagram.com/${username}/`;
+}
+
+async function runInstagramActor(username) {
+  return apify_client.actor(APIFY_ACTOR_ID).call({
+    addParentData: false,
+    directUrls: [buildInstagramProfileUrl(username)],
+    onlyPostsNewerThan: "1 day",
+    resultsLimit: 1,
+    resultsType: "posts",
+    searchType: "user",
+  });
+}
+
+async function getActorItems(datasetId) {
+  const { items = [] } = await apify_client.dataset(datasetId).listItems();
+  return items;
+}
+
+function mapActorItems(items) {
+  return items.map((item) => ({
+    postID: item.id,
+    caption: item.caption,
+    url: item.url,
+    likesCount: item.likesCount,
+    ownerUsername: item.ownerUsername,
+    images: item.images ?? [],
+  }));
+}
+
+async function uploadPostToCloudinary(post) {
+  const cloudinaryPics = await Promise.all(
+    post.images.map(async (imgUrl) => {
+      const result = await cloudinary.uploadScrappedPictures({
+        image: imgUrl,
+        folder: `${post.ownerUsername}-${post.postID}`,
+      });
+
+      return {
+        public_id: result.public_id,
+        secure_url: result.secure_url,
+      };
+    }),
+  );
+
+  const { images, ...rest } = post;
+  return { ...rest, cloudinaryPics };
+}
+
+async function persistPosts(posts) {
+  if (posts.length === 0) {
+    return { insertedCount: 0 };
+  }
+
+  return ig_posts_collection.insertMany(posts);
+}
+
 async function getScrappedPictures(req, res) {
   // TODO:  add validation for date ranges of fetch so no same content will be uploaded
   // Each scrapping is every monday
@@ -62,64 +122,38 @@ async function runActor(req, res) {
   try {
     const username = req.body.username;
 
-    const run = await apify_client.actor("apify/instagram-scraper").call({
-      addParentData: false,
-      directUrls: [`https://www.instagram.com/${username}/`],
-      onlyPostsNewerThan: "1 month",
-      resultsLimit: 1,
-      resultsType: "posts",
-      searchType: "user",
-    });
-    // Debug
-    console.log(run)
-    const { items } = await apify_client
-      .dataset(run.defaultDatasetId)
-      .listItems();
+    if (!username || typeof username !== "string" || !username.trim()) {
+      return res.status(400).json({
+        message: "username is required",
+      });
+    }
 
-    const filtered = items.map((item) => ({
-      postID: item.id,
-      caption: item.caption,
-      url: item.url,
-      likesCount: item.likesCount,
-      ownerUsername: item.ownerUsername,
-      images: item.images,
-    }));
-    // Debug
-    console.log(filtered)
+    const run = await runInstagramActor(username.trim());
+    const items = await getActorItems(run.defaultDatasetId);
 
-    // Add Prefix to the folder name soon
+    if (items.length === 0) {
+      return res.status(404).json({
+        message: "No posts were returned for this username",
+      });
+    }
+
+    const filtered = mapActorItems(items);
+
     const postsWithCloudinary = await Promise.all(
-      filtered.map(async (post) => {
-        const cloudinaryPics = await Promise.all(
-          post.images.map(async (imgUrl) => {
-            const result = await cloudinary.uploadScrappedPictures({
-              image: imgUrl,
-              folder: post.ownerUsername + "-" + post.postID,
-            });
-            return {
-              public_id: result.public_id,
-              secure_url: result.secure_url,
-            };
-          }),
-        );
-        // Return a new object for MongoDB, without the original images array
-        const { images, ...rest } = post;
-        return { ...rest, cloudinaryPics };
-      }),
+      filtered.map(uploadPostToCloudinary),
     );
 
-    console.log(postsWithCloudinary)
+    await persistPosts(postsWithCloudinary);
 
-    // Now insert all posts at once
-    await ig_posts_collection.insertMany(postsWithCloudinary);
-
-    console.log(postsWithCloudinary);
-    res.status(200).json({
+    return res.status(200).json({
       message: "Success",
-      url: postsWithCloudinary.url,
+      insertedCount: postsWithCloudinary.length,
+      data: postsWithCloudinary,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 }
 

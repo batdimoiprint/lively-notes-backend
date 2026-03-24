@@ -114,8 +114,8 @@ router.post("/actor/dataset" , apifyController.getDataset)
  *   post:
  *     tags:
  *       - Apify
- *     summary: Run Instagram Scraper (Fire-and-Forget)
- *     description: Starts the Instagram scraper actor to collect posts from a specific profile. Returns the scraped data including caption, URL, likes count, and owner username.
+ *     summary: Run Instagram Scraper
+ *     description: Starts the Instagram scraper actor for a specific profile and stores returned posts in MongoDB after uploading images to Cloudinary.
  *     requestBody:
  *       required: true
  *       content:
@@ -128,29 +128,38 @@ router.post("/actor/dataset" , apifyController.getDataset)
  *                 example: liz.yeyo
  *     responses:
  *       200:
- *         description: Scraping completed successfully
+ *         description: Scraping completed successfully and posts were stored
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       caption:
- *                         type: string
- *                         example: "A beautiful sunset."
- *                       url:
- *                         type: string
- *                         example: "https://www.instagram.com/p/xyz123/"
- *                       likesCount:
- *                         type: integer
- *                         example: 150
- *                       ownerUsername:
- *                         type: string
- *                         example: "liz.yeyo"
+ *                 message:
+ *                   type: string
+ *                   example: "Success"
+ *                 insertedCount:
+ *                   type: integer
+ *                   example: 1
+ *       400:
+ *         description: Invalid request body
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "username is required"
+ *       404:
+ *         description: No posts were returned for the supplied username
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No posts were returned for this username"
  *       500:
  *         description: Failed to start actor or retrieve data
  */
