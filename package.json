@@ -21,7 +21,9 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^6.20.0",
+    "multer": "^2.1.1",
     "nodemon": "^3.1.11",
+    "pino-http": "^11.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-dist": "^5.31.0",
     "swagger-ui-express": "^5.0.1"

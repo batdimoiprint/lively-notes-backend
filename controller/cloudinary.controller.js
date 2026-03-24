@@ -58,4 +58,73 @@ const uploadScrappedPictures = async (req, res) => {
   }
 };
 
-module.exports = { getAllImages, getImagesByFolder, uploadScrappedPictures };
+const uploadSinglePicture = async (req, res) => {
+  if (!req.file || !req.file.buffer) {
+    res.status(400).json({ error: "Image file is required" });
+    return;
+  }
+
+  try {
+    const uploaded = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "wallpapers",
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve(result);
+        }
+      );
+
+      stream.end(req.file.buffer);
+    });
+
+    res.status(201).json({
+      public_id: uploaded.public_id,
+      secure_url: uploaded.secure_url,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to upload image" });
+  }
+};
+
+const getSingleImageByFolder = async (req, res) => {
+  try {
+    const result = await cloudinary.api.resources_by_asset_folder("wallpapers", {
+      type: "upload",
+      max_results: 500,
+      direction: "desc",
+    });
+
+    const publicIds = result.resources.map((img) => img.public_id);
+    const chosenPublicId = randomizer(publicIds);
+
+    if (!chosenPublicId) {
+      res.status(404).json({ error: "No background image found in wallpapers folder" });
+      return;
+    }
+
+    const chosenImage = result.resources.find((img) => img.public_id === chosenPublicId);
+
+    res.status(200).json({
+      public_id: chosenPublicId,
+      secure_url: chosenImage?.secure_url,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch background image" });
+  }
+};
+
+module.exports = {
+  getAllImages,
+  getImagesByFolder,
+  uploadScrappedPictures,
+  uploadSinglePicture,
+  getSingleImageByFolder,
+};

@@ -21,6 +21,10 @@ const registerRoutes = (app) => {
   const settingsRouter = require("./settings.routes.js");
   app.use("/api/settings", settingsRouter);
 
+  // Background Image Routes
+  const backgroundImageRouter = require("./backgroundimage.routes.js");
+  app.use("/api/backgroundimage", backgroundImageRouter);
+
   // Apify Routes
   const apifyRouter = require("./apify.routes.js");
   app.use("/api/apify", authJWT, apifyRouter);
