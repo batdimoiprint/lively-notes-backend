@@ -2,6 +2,7 @@ const apify_api = require("../api/axiosInstance");
 const apify_client = require("../config/apify.client");
 const cloudinary = require("./cloudinary.controller");
 const igPostEvents = require("../service/igpost.events");
+const igUsernameService = require("../service/igusername.service");
 const client = require("../db/db.js");
 const myDB = client.db("livelydesktopnotes");
 const ig_posts_collection = myDB.collection("ig_posts");
@@ -16,7 +17,7 @@ async function runInstagramActor(username) {
   return apify_client.actor(APIFY_ACTOR_ID).call({
     addParentData: false,
     directUrls: [buildInstagramProfileUrl(username)],
-    onlyPostsNewerThan: "1 week",
+    onlyPostsNewerThan: "1 day",
     resultsLimit: 1,
     resultsType: "posts",
     searchType: "user",
@@ -64,6 +65,144 @@ async function persistPosts(posts) {
   }
 
   return ig_posts_collection.insertMany(posts);
+}
+
+async function updateExistingPostLikesCounts(posts) {
+  if (posts.length === 0) {
+    return { updatedCount: 0 };
+  }
+
+  const updateResults = await Promise.all(
+    posts.map((post) =>
+      ig_posts_collection.updateOne(
+        { url: post.url },
+        { $set: { likesCount: post.likesCount } },
+      ),
+    ),
+  );
+
+  return {
+    updatedCount: updateResults.reduce(
+      (count, result) => count + (result.modifiedCount ?? 0),
+      0,
+    ),
+  };
+}
+
+async function getExistingPostUrls(urls) {
+  const uniqueUrls = Array.from(
+    new Set(
+      urls
+        .filter((value) => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  );
+
+  if (uniqueUrls.length === 0) {
+    return new Set();
+  }
+
+  const existingPosts = await ig_posts_collection
+    .find(
+      { url: { $in: uniqueUrls } },
+      { projection: { url: 1, _id: 0 } },
+    )
+    .toArray();
+
+  return new Set(
+    existingPosts
+      .map((post) => post?.url)
+      .filter((value) => typeof value === "string" && value.trim()),
+  );
+}
+
+function dedupePostsByUrl(posts) {
+  const seenUrls = new Set();
+
+  return posts.filter((post) => {
+    const url = typeof post?.url === "string" ? post.url.trim() : "";
+
+    if (!url || seenUrls.has(url)) {
+      return false;
+    }
+
+    seenUrls.add(url);
+    return true;
+  });
+}
+
+async function scrapeAndStoreUsername(username) {
+  const normalizedUsername = typeof username === "string" ? username.trim() : "";
+
+  if (!normalizedUsername) {
+    return {
+      found: false,
+      message: "username is required",
+    };
+  }
+
+  const run = await runInstagramActor(normalizedUsername);
+  const items = await getActorItems(run.defaultDatasetId);
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return {
+      found: false,
+      message: "No posts were returned for this username",
+      username: normalizedUsername,
+    };
+  }
+
+  const filtered = mapActorItems(items);
+  if (!Array.isArray(filtered) || filtered.length === 0) {
+    return {
+      found: false,
+      message: "No valid posts to process for this username",
+      username: normalizedUsername,
+    };
+  }
+
+  const uniquePosts = dedupePostsByUrl(filtered);
+  const existingUrls = await getExistingPostUrls(uniquePosts.map((post) => post.url));
+  const duplicatePosts = uniquePosts.filter((post) => existingUrls.has(post.url));
+  const newPosts = uniquePosts.filter((post) => !existingUrls.has(post.url));
+
+  const { updatedCount } = await updateExistingPostLikesCounts(duplicatePosts);
+
+  if (newPosts.length === 0) {
+    return {
+      found: true,
+      username: normalizedUsername,
+      insertedCount: 0,
+      updatedCount,
+      skippedDuplicateCount: duplicatePosts.length,
+      data: [],
+      message: duplicatePosts.length > 0 ? "Existing posts updated" : "No new posts to store",
+    };
+  }
+
+  const postsWithCloudinary = await Promise.all(
+    newPosts.map(uploadPostToCloudinary),
+  );
+
+  if (!Array.isArray(postsWithCloudinary) || postsWithCloudinary.length === 0) {
+    return {
+      found: false,
+      message: "No posts to store after Cloudinary upload",
+      username: normalizedUsername,
+    };
+  }
+
+  await persistPosts(postsWithCloudinary);
+
+  return {
+    found: true,
+    username: normalizedUsername,
+    insertedCount: postsWithCloudinary.length,
+    updatedCount,
+    skippedDuplicateCount: duplicatePosts.length,
+    data: postsWithCloudinary,
+  };
 }
 
 async function getScrappedPictures(req, res) {
@@ -129,44 +268,97 @@ async function runActor(req, res) {
       });
     }
 
-    const run = await runInstagramActor(username.trim());
-    const items = await getActorItems(run.defaultDatasetId);
+    const result = await scrapeAndStoreUsername(username);
 
-    if (!Array.isArray(items) || items.length === 0) {
+    if (!result.found) {
       return res.status(404).json({
-        message: "No posts were returned for this username",
+        message: result.message,
       });
     }
 
-    // Only proceed if items is non-empty
-    const filtered = mapActorItems(items);
-    if (!Array.isArray(filtered) || filtered.length === 0) {
-      return res.status(404).json({
-        message: "No valid posts to process for this username",
+    if (result.insertedCount > 0 || (result.updatedCount ?? 0) > 0) {
+      igPostEvents.emitIgPostsUpdated(req.user?.userId, {
+        insertedCount: result.insertedCount,
+        updatedCount: result.updatedCount ?? 0,
+        username: result.username,
       });
     }
-
-    const postsWithCloudinary = await Promise.all(
-      filtered.map(uploadPostToCloudinary),
-    );
-
-    if (!Array.isArray(postsWithCloudinary) || postsWithCloudinary.length === 0) {
-      return res.status(404).json({
-        message: "No posts to store after Cloudinary upload",
-      });
-    }
-
-    await persistPosts(postsWithCloudinary);
-
-    igPostEvents.emitIgPostsUpdated(req.user?.userId, {
-      insertedCount: postsWithCloudinary.length,
-      username,
-    });
 
     return res.status(200).json({
-      message: "Success",
-      insertedCount: postsWithCloudinary.length,
-      data: postsWithCloudinary,
+      message: result.message ?? "Success",
+      insertedCount: result.insertedCount,
+      updatedCount: result.updatedCount ?? 0,
+      skippedDuplicateCount: result.skippedDuplicateCount ?? 0,
+      data: result.data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+}
+
+async function refreshActors(req, res) {
+  try {
+    const userId = req.user?.userId;
+    const result = await igUsernameService.listIgUsernames(userId);
+
+    if (result.notFound) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const usernames = Array.isArray(result.data)
+      ? result.data
+          .map((entry) => entry?.igUsername)
+          .filter((value) => typeof value === "string" && value.trim())
+      : [];
+
+    if (usernames.length === 0) {
+      return res.status(404).json({ message: "No ig usernames configured" });
+    }
+
+    const refreshedUsernames = [];
+    const skippedUsernames = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
+
+    for (const username of usernames) {
+      try {
+        const scrapeResult = await scrapeAndStoreUsername(username);
+
+        if (!scrapeResult.found) {
+          skippedUsernames.push({
+            username: scrapeResult.username ?? username,
+            message: scrapeResult.message,
+          });
+          continue;
+        }
+
+        refreshedUsernames.push(scrapeResult.username);
+        insertedCount += scrapeResult.insertedCount;
+        updatedCount += scrapeResult.updatedCount ?? 0;
+      } catch (error) {
+        skippedUsernames.push({
+          username,
+          message: error.message,
+        });
+      }
+    }
+
+    if (insertedCount > 0 || updatedCount > 0) {
+      igPostEvents.emitIgPostsUpdated(userId, {
+        insertedCount,
+        updatedCount,
+        usernames: refreshedUsernames,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Refresh complete",
+      insertedCount,
+      updatedCount,
+      refreshedUsernames,
+      skippedUsernames,
     });
   } catch (error) {
     return res.status(500).json({
@@ -187,4 +379,4 @@ async function getDataset(req, res) {
   }
 }
 
-module.exports = { getScrappedPictures, getActorInfo, getDataset, runActor };
+module.exports = { getScrappedPictures, getActorInfo, getDataset, runActor, refreshActors };

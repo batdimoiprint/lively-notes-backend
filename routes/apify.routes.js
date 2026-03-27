@@ -165,6 +165,24 @@ router.post("/actor/dataset" , apifyController.getDataset)
  */
 router.post("/run-actor" , apifyController.runActor)
 
+/**
+ * @swagger
+ * /api/apify/refresh:
+ *   post:
+ *     tags:
+ *       - Apify
+ *     summary: Refresh all saved IG usernames
+ *     description: Loads the authenticated user's saved `igUsernames` and runs the Instagram scraper actor for each username, storing any returned posts in MongoDB after uploading images to Cloudinary.
+ *     responses:
+ *       200:
+ *         description: Refresh completed successfully
+ *       404:
+ *         description: No IG usernames configured or user not found
+ *       500:
+ *         description: Failed to refresh IG usernames
+ */
+router.post("/refresh", apifyController.refreshActors);
+
 
 
 module.exports = router;
