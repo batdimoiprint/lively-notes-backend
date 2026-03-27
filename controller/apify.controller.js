@@ -1,6 +1,7 @@
 const apify_api = require("../api/axiosInstance");
 const apify_client = require("../config/apify.client");
 const cloudinary = require("./cloudinary.controller");
+const igPostEvents = require("../service/igpost.events");
 const client = require("../db/db.js");
 const myDB = client.db("livelydesktopnotes");
 const ig_posts_collection = myDB.collection("ig_posts");
@@ -156,6 +157,11 @@ async function runActor(req, res) {
     }
 
     await persistPosts(postsWithCloudinary);
+
+    igPostEvents.emitIgPostsUpdated(req.user?.userId, {
+      insertedCount: postsWithCloudinary.length,
+      username,
+    });
 
     return res.status(200).json({
       message: "Success",

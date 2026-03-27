@@ -53,6 +53,22 @@ router.get("/", igpost_controller.returnOneRandomPost)
 
 /**
  * @swagger
+ * /api/igpost/events:
+ *   get:
+ *     tags:
+ *       - IG Posts
+ *     summary: Stream IG post refresh events
+ *     description: Keeps an SSE connection open so the frontend can refresh idol posts after scraping finishes.
+ *     responses:
+ *       200:
+ *         description: SSE stream opened successfully
+ *       400:
+ *         description: Invalid user
+ */
+router.get("/events", igpost_controller.streamIgPostsUpdates);
+
+/**
+ * @swagger
  * /api/igpost/idol-posts:
  *   get:
  *     tags:

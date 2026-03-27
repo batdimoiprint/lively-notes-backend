@@ -1,5 +1,6 @@
 const client = require("../db/db.js");
 const { ObjectId } = require("mongodb");
+const igPostEvents = require("../service/igpost.events");
 const myDB = client.db("livelydesktopnotes");
 const ig_posts_collection = myDB.collection("ig_posts");
 const userCollection = myDB.collection("user");
@@ -83,5 +84,28 @@ async function getIdolPosts(req, res) {
     }
 }
 
+async function streamIgPostsUpdates(req, res) {
+    try {
+        const userId = req.user?.userId;
 
-module.exports = { returnOneRandomPost, getIdolPosts };
+        if (!ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid user" });
+        }
+
+        igPostEvents.registerIgPostsStream(userId, res);
+
+        req.on("close", () => {
+            if (!res.writableEnded) {
+                res.end();
+            }
+        });
+
+        return undefined;
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+
+module.exports = { returnOneRandomPost, getIdolPosts, streamIgPostsUpdates };
