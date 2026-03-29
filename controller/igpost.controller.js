@@ -84,6 +84,73 @@ async function getIdolPosts(req, res) {
     }
 }
 
+async function getNewestIdolPosts(req, res) {
+    try {
+        const userId = req.user?.userId;
+        if (!ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid user" });
+        }
+
+        const user = await userCollection.findOne({ _id: new ObjectId(userId) });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const usernames = Array.isArray(user.igUsernames)
+            ? user.igUsernames.map((entry) => entry?.igUsername).filter(Boolean)
+            : [];
+
+        if (usernames.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        const postsByUsername = await Promise.all(
+            usernames.map(async (username) => {
+                const posts = await ig_posts_collection
+                    .find({ ownerUsername: username })
+                    .sort({ _id: -1 })
+                    .limit(1)
+                    .toArray();
+
+                if (posts.length === 0) {
+                    return null;
+                }
+
+                return posts[0];
+            }),
+        );
+
+        const newestPosts = postsByUsername.filter(Boolean);
+        return res.status(200).json(newestPosts);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+async function getRandomPostByUsername(req, res) {
+    try {
+        const username = req.params.username;
+        if (!username) {
+            return res.status(400).json({ message: "Username required" });
+        }
+
+        const posts = await ig_posts_collection
+            .find({ ownerUsername: username })
+            .toArray();
+
+        if (posts.length === 0) {
+            return res.status(404).json({ message: "No posts found for this username" });
+        }
+
+        const randomPost = posts[Math.floor(Math.random() * posts.length)];
+        return res.status(200).json(randomPost);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: error.message });
+    }
+}
+
 async function streamIgPostsUpdates(req, res) {
     try {
         const userId = req.user?.userId;
@@ -108,4 +175,4 @@ async function streamIgPostsUpdates(req, res) {
 }
 
 
-module.exports = { returnOneRandomPost, getIdolPosts, streamIgPostsUpdates };
+module.exports = { returnOneRandomPost, getIdolPosts, getNewestIdolPosts, getRandomPostByUsername, streamIgPostsUpdates };

@@ -120,6 +120,39 @@ router.get("/idol-posts", igpost_controller.getIdolPosts)
 
 /**
  * @swagger
+ * /api/igpost/newest-idol-posts:
+ *   get:
+ *     tags:
+ *       - IG Posts
+ *     summary: Get the newest IG post for each saved IG username
+ *     description: Returns an array of the newest Instagram posts where each item corresponds to one saved username for the authenticated user. Usernames without posts are skipped.
+ *     responses:
+ *       200:
+ *         description: IG posts retrieved successfully
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/newest-idol-posts", igpost_controller.getNewestIdolPosts)
+
+/**
+ * @swagger
+ * /api/igpost/random-post/{username}:
+ *   get:
+ *     tags:
+ *       - IG Posts
+ *     summary: Get one random IG post for a specific username
+ *     responses:
+ *       200:
+ *         description: IG post retrieved successfully
+ *       404:
+ *         description: Not found
+ */
+router.get("/random-post/:username", igpost_controller.getRandomPostByUsername)
+
+/**
+ * @swagger
  * /api/igpost/usernames:
  *   get:
  *     tags:
