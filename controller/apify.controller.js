@@ -13,12 +13,16 @@ function buildInstagramProfileUrl(username) {
   return `https://www.instagram.com/${username}/`;
 }
 
-async function runInstagramActor(username) {
+async function runInstagramActor(usernames) {
+  const urls = Array.isArray(usernames)
+    ? usernames.map(buildInstagramProfileUrl)
+    : [buildInstagramProfileUrl(usernames)];
+
   return apify_client.actor(APIFY_ACTOR_ID).call({
     addParentData: false,
-    directUrls: [buildInstagramProfileUrl(username)],
-    onlyPostsNewerThan: "1 day",
-    resultsLimit: 1,
+    directUrls: urls,
+    onlyPostsNewerThan: "1 week",
+    // resultsLimit: 1,
     resultsType: "posts",
     searchType: "user",
   });
@@ -30,14 +34,23 @@ async function getActorItems(datasetId) {
 }
 
 function mapActorItems(items) {
-  return items.map((item) => ({
-    postID: item.id,
-    caption: item.caption,
-    url: item.url,
-    likesCount: item.likesCount,
-    ownerUsername: item.ownerUsername,
-    images: item.images ?? [],
-  }));
+  return items
+    .filter(
+      (item) =>
+        item &&
+        !item.message && // drop error objects like { message: "ERR_CONNECT_FAIL ..." }
+        item.id &&
+        item.url &&
+        item.ownerUsername,
+    )
+    .map((item) => ({
+      postID: item.id,
+      caption: item.caption,
+      url: item.url,
+      likesCount: item.likesCount,
+      ownerUsername: item.ownerUsername,
+      images: Array.isArray(item.images) ? item.images : [],
+    }));
 }
 
 async function uploadPostToCloudinary(post) {
@@ -132,33 +145,40 @@ function dedupePostsByUrl(posts) {
   });
 }
 
-async function scrapeAndStoreUsername(username) {
-  const normalizedUsername = typeof username === "string" ? username.trim() : "";
+async function scrapeAndStoreUsernames(usernames) {
+  const normalizedUsernames = (Array.isArray(usernames) ? usernames : [usernames])
+    .filter((value) => typeof value === "string" && value.trim())
+    .map((value) => value.trim());
 
-  if (!normalizedUsername) {
+  if (normalizedUsernames.length === 0) {
     return {
       found: false,
-      message: "username is required",
+      message: "At least one valid username is required",
     };
   }
 
-  const run = await runInstagramActor(normalizedUsername);
+  const usernameSet = new Set(normalizedUsernames.map((u) => u.toLowerCase()));
+
+  const run = await runInstagramActor(normalizedUsernames);
   const items = await getActorItems(run.defaultDatasetId);
 
   if (!Array.isArray(items) || items.length === 0) {
     return {
       found: false,
-      message: "No posts were returned for this username",
-      username: normalizedUsername,
+      message: "No posts were returned for these usernames",
+      usernames: normalizedUsernames,
     };
   }
 
-  const filtered = mapActorItems(items);
+  const filtered = mapActorItems(items).filter((post) => {
+    const owner = typeof post.ownerUsername === "string" ? post.ownerUsername.trim() : "";
+    return owner && usernameSet.has(owner.toLowerCase());
+  });
   if (!Array.isArray(filtered) || filtered.length === 0) {
     return {
       found: false,
-      message: "No valid posts to process for this username",
-      username: normalizedUsername,
+      message: "No valid posts to process for these usernames",
+      usernames: normalizedUsernames,
     };
   }
 
@@ -172,7 +192,7 @@ async function scrapeAndStoreUsername(username) {
   if (newPosts.length === 0) {
     return {
       found: true,
-      username: normalizedUsername,
+      usernames: normalizedUsernames,
       insertedCount: 0,
       updatedCount,
       skippedDuplicateCount: duplicatePosts.length,
@@ -189,7 +209,7 @@ async function scrapeAndStoreUsername(username) {
     return {
       found: false,
       message: "No posts to store after Cloudinary upload",
-      username: normalizedUsername,
+      usernames: normalizedUsernames,
     };
   }
 
@@ -197,7 +217,7 @@ async function scrapeAndStoreUsername(username) {
 
   return {
     found: true,
-    username: normalizedUsername,
+    usernames: normalizedUsernames,
     insertedCount: postsWithCloudinary.length,
     updatedCount,
     skippedDuplicateCount: duplicatePosts.length,
@@ -268,7 +288,7 @@ async function runActor(req, res) {
       });
     }
 
-    const result = await scrapeAndStoreUsername(username);
+    const result = await scrapeAndStoreUsernames([username]);
 
     if (!result.found) {
       return res.status(404).json({
@@ -280,7 +300,7 @@ async function runActor(req, res) {
       igPostEvents.emitIgPostsUpdated(req.user?.userId, {
         insertedCount: result.insertedCount,
         updatedCount: result.updatedCount ?? 0,
-        username: result.username,
+        username: result.usernames[0],
       });
     }
 
@@ -317,48 +337,30 @@ async function refreshActors(req, res) {
       return res.status(404).json({ message: "No ig usernames configured" });
     }
 
-    const refreshedUsernames = [];
-    const skippedUsernames = [];
-    let insertedCount = 0;
-    let updatedCount = 0;
+    const scrapeResult = await scrapeAndStoreUsernames(usernames);
 
-    for (const username of usernames) {
-      try {
-        const scrapeResult = await scrapeAndStoreUsername(username);
-
-        if (!scrapeResult.found) {
-          skippedUsernames.push({
-            username: scrapeResult.username ?? username,
-            message: scrapeResult.message,
-          });
-          continue;
-        }
-
-        refreshedUsernames.push(scrapeResult.username);
-        insertedCount += scrapeResult.insertedCount;
-        updatedCount += scrapeResult.updatedCount ?? 0;
-      } catch (error) {
-        skippedUsernames.push({
-          username,
-          message: error.message,
-        });
-      }
+    if (!scrapeResult.found) {
+      return res.status(200).json({
+        message: scrapeResult.message || "Failed to scrub any new posts",
+        skippedUsernames: usernames,
+      });
     }
 
-    if (insertedCount > 0 || updatedCount > 0) {
+    if (scrapeResult.insertedCount > 0 || (scrapeResult.updatedCount ?? 0) > 0) {
       igPostEvents.emitIgPostsUpdated(userId, {
-        insertedCount,
-        updatedCount,
-        usernames: refreshedUsernames,
+        insertedCount: scrapeResult.insertedCount,
+        updatedCount: scrapeResult.updatedCount ?? 0,
+        usernames: scrapeResult.usernames,
       });
     }
 
     return res.status(200).json({
       message: "Refresh complete",
-      insertedCount,
-      updatedCount,
-      refreshedUsernames,
-      skippedUsernames,
+      insertedCount: scrapeResult.insertedCount,
+      updatedCount: scrapeResult.updatedCount ?? 0,
+      refreshedUsernames: scrapeResult.usernames,
+      skippedDuplicateCount: scrapeResult.skippedDuplicateCount ?? 0,
+      skippedUsernames: [],
     });
   } catch (error) {
     return res.status(500).json({
