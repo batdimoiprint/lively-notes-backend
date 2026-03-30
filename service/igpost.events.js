@@ -19,7 +19,7 @@ function writeSseEvent(res, eventName, data) {
 function registerIgPostsStream(userId, res) {
   res.status(200);
   res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Cache-Control", "no-store, no-cache, no-transform, must-revalidate");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no");
 
