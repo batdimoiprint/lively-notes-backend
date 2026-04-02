@@ -4,7 +4,7 @@ const myDB = client.db("livelydesktopnotes");
 const notesCollection = myDB.collection("notes");
 
 async function getAll() {
-  const cursor = await notesCollection.find({});
+  const cursor = await notesCollection.find({}).sort({ order: 1 });
   return cursor.toArray();
 }
 
@@ -47,6 +47,21 @@ async function updateNote(payload) {
   }
 }
 
+async function updateOrder(orderedIds) {
+  const bulkOps = orderedIds.map((id, index) => ({
+    updateOne: {
+      filter: { _id: new ObjectId(id) },
+      update: { $set: { order: index } },
+    },
+  }));
+
+  const result = await notesCollection.bulkWrite(bulkOps);
+  return {
+    acknowledged: result.ok === 1,
+    modified: result.modifiedCount,
+  };
+}
+
 function isValidObjectId(id) {
   return ObjectId.isValid(id);
 }
@@ -56,5 +71,6 @@ module.exports = {
   createNote,
   deleteNote,
   updateNote,
+  updateOrder,
   isValidObjectId,
 };

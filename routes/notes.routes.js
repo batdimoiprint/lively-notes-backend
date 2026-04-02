@@ -150,4 +150,43 @@ router.delete("/", notesController.deleteNote);
  */
 router.put("/", notesController.editNotes);
 
+/**
+ * @swagger
+ * /api/notes/reorder:
+ *   patch:
+ *     tags:
+ *       - Notes
+ *     summary: Reorder notes
+ *     description: Updates the order of notes based on an array of IDs in their new order.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               orderedIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["68d6720abb392b1320776431", "68d6720abb392b1320776432"]
+ *     responses:
+ *       200:
+ *         description: Notes reordered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 acknowledged:
+ *                   type: boolean
+ *                   example: true
+ *                 modified:
+ *                   type: number
+ *                   example: 2
+ *       400:
+ *         description: Invalid request body
+ */
+router.patch("/reorder", notesController.reorderNotes);
+
 module.exports = router;

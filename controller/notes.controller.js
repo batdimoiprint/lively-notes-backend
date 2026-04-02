@@ -57,4 +57,25 @@ async function editNotes(req, res, next) {
   }
 }
 
-module.exports = { listNotes, createNote, deleteNote, editNotes };
+async function reorderNotes(req, res, next) {
+  try {
+    const { orderedIds } = req.body;
+
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      return res.status(400).json({ error: "orderedIds must be a non-empty array" });
+    }
+
+    for (const id of orderedIds) {
+      if (!notesService.isValidObjectId(id)) {
+        return res.status(400).json({ error: `Invalid ID format: ${id}` });
+      }
+    }
+
+    const result = await notesService.updateOrder(orderedIds);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { listNotes, createNote, deleteNote, editNotes, reorderNotes };
