@@ -78,4 +78,23 @@ async function reorderNotes(req, res, next) {
   }
 }
 
-module.exports = { listNotes, createNote, deleteNote, editNotes, reorderNotes };
+async function moveNoteToSection(req, res, next) {
+  try {
+    const { noteId, sectionId } = req.body;
+
+    if (!noteId || !sectionId) {
+      return res.status(400).json({ error: "noteId and sectionId are required" });
+    }
+
+    if (!notesService.isValidObjectId(noteId)) {
+      return res.status(400).json({ error: "Invalid noteId format" });
+    }
+
+    const result = await notesService.moveToSection(noteId, sectionId);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { listNotes, createNote, deleteNote, editNotes, reorderNotes, moveNoteToSection };

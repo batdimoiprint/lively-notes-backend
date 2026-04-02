@@ -189,4 +189,31 @@ router.put("/", notesController.editNotes);
  */
 router.patch("/reorder", notesController.reorderNotes);
 
+/**
+ * @swagger
+ * /api/notes/move-section:
+ *   patch:
+ *     tags:
+ *       - Notes
+ *     summary: Move note to section
+ *     description: Moves a note to a different section
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               noteId:
+ *                 type: string
+ *                 example: "68d6720abb392b1320776431"
+ *               sectionId:
+ *                 type: string
+ *                 example: "work"
+ *     responses:
+ *       200:
+ *         description: Note moved successfully
+ */
+router.patch("/move-section", notesController.moveNoteToSection);
+
 module.exports = router;

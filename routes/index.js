@@ -41,6 +41,11 @@ const registerRoutes = (app) => {
   const todosRouter = require("./todos.routes.js");
   app.use("/api/todos", authJWT, todosRouter);
 
+  // Sections Routes
+  const sectionsRouter = require("./sections.routes.js");
+  app.use("/api/sections", authJWT, sectionsRouter);
+
+
 
 };
 

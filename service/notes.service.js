@@ -8,9 +8,19 @@ async function getAll() {
   return cursor.toArray();
 }
 
+async function getBySection(sectionId) {
+  const cursor = await notesCollection.find({ sectionId }).sort({ order: 1 });
+  return cursor.toArray();
+}
+
 async function createNote(payload) {
-  await notesCollection.insertOne(payload);
-  return { ...payload };
+  const note = {
+    title: payload.title,
+    body: payload.body,
+    sectionId: payload.sectionId || "default",
+  };
+  await notesCollection.insertOne(note);
+  return { ...note };
 }
 
 async function deleteNote(id) {
@@ -34,9 +44,18 @@ async function updateNote(payload) {
     }
 
     const id = new ObjectId(payload._id);
+    const updateFields = {
+      title: payload.title,
+      body: payload.body,
+    };
+    
+    if (payload.sectionId !== undefined) {
+      updateFields.sectionId = payload.sectionId;
+    }
+    
     const result = await notesCollection.replaceOne(
       { _id: id },
-      { title: payload.title, body: payload.body }
+      updateFields
     );
     return {
       acknowledged: result.acknowledged,
@@ -62,15 +81,34 @@ async function updateOrder(orderedIds) {
   };
 }
 
+async function moveToSection(noteId, sectionId) {
+  if (!ObjectId.isValid(noteId)) {
+    return { acknowledged: false, modified: 0 };
+  }
+
+  const id = new ObjectId(noteId);
+  const result = await notesCollection.updateOne(
+    { _id: id },
+    { $set: { sectionId } }
+  );
+
+  return {
+    acknowledged: result.acknowledged,
+    modified: result.modifiedCount,
+  };
+}
+
 function isValidObjectId(id) {
   return ObjectId.isValid(id);
 }
 
 module.exports = {
   getAll,
+  getBySection,
   createNote,
   deleteNote,
   updateNote,
   updateOrder,
+  moveToSection,
   isValidObjectId,
 };
