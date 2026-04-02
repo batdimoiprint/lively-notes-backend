@@ -37,6 +37,11 @@ const registerRoutes = (app) => {
   const soundRouter = require("./sound.routes.js");
   app.use("/api/sound", soundRouter);
 
+  // Todos Routes
+  const todosRouter = require("./todos.routes.js");
+  app.use("/api/todos", authJWT, todosRouter);
+
+
 };
 
 module.exports = registerRoutes;
