@@ -44,19 +44,21 @@ async function updateNote(payload) {
     }
 
     const id = new ObjectId(payload._id);
-    const updateFields = {
-      title: payload.title,
-      body: payload.body,
-    };
-    
+    const updateFields = {};
+
+    if (payload.title !== undefined) {
+      updateFields.title = payload.title;
+    }
+
+    if (payload.body !== undefined) {
+      updateFields.body = payload.body;
+    }
+
     if (payload.sectionId !== undefined) {
       updateFields.sectionId = payload.sectionId;
     }
-    
-    const result = await notesCollection.replaceOne(
-      { _id: id },
-      updateFields
-    );
+
+    const result = await notesCollection.updateOne({ _id: id }, { $set: updateFields });
     return {
       acknowledged: result.acknowledged,
       modified: result.modifiedCount,

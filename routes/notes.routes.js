@@ -110,11 +110,11 @@ router.delete("/", notesController.deleteNote);
 /**
  * @swagger
  * /api/notes:
- *   put:
+ *   patch:
  *     tags:
  *       - Notes
- *     summary: Replace a note
- *     description: Updates an existing note's title and body.
+ *     summary: Update a note
+ *     description: Updates an existing note without replacing unrelated fields such as sectionId.
  *     requestBody:
  *       required: true
  *       content:
@@ -133,7 +133,7 @@ router.delete("/", notesController.deleteNote);
  *                 example: "Update Successful"
  *     responses:
  *       200:
- *         description: Note replaced successfully
+ *         description: Note updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -148,7 +148,7 @@ router.delete("/", notesController.deleteNote);
  *       400:
  *         description: Invalid ID format
  */
-router.put("/", notesController.editNotes);
+router.patch("/", notesController.editNotes);
 
 /**
  * @swagger

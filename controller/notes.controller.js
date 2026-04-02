@@ -42,14 +42,18 @@ async function deleteNote(req, res, next) {
 
 async function editNotes(req, res, next) {
   try {
-    // console.log(req.body);
     const resourceId = req.body._id;
 
     if (!notesService.isValidObjectId(resourceId)) {
       return res.status(400).json({ error: "Invalid Format" });
     }
 
-    const update = await notesService.updateNote(req.body);
+    const update = await notesService.updateNote({
+      _id: resourceId,
+      title: req.body.title,
+      body: req.body.body,
+      sectionId: req.body.sectionId,
+    });
 
     res.status(200).json(update);
   } catch (error) {
