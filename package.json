@@ -31,7 +31,9 @@
     "serverless-http": "^4.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-dist": "^5.32.1",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "jszip": "^3.10.1",
+    "axios": "^1.14.0"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10"

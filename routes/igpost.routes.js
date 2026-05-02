@@ -49,6 +49,8 @@ const igusername_controller = require('../controller/igusername.controller');
  *       500:
  *         description: Internal server error
  */
+router.post("/download", igpost_controller.downloadImages);
+
 router.get("/", igpost_controller.returnOneRandomPost)
 
 /**
