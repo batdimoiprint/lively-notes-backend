@@ -23,15 +23,16 @@ const app = express();
 app.use(helmet())
 
 // Rate Limiter
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100,                  
-  standardHeaders: true,    
-  legacyHeaders: false,
-  message: { error: 'Too many requests. Try again later.' }
-})
-
-app.use(limiter)
+if (process.env.NODE_ENV !== "development") {
+  const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 100, // 100 requests per minute
+    standardHeaders: true,    
+    legacyHeaders: false,
+    message: { error: 'Too many requests. Try again later.' }
+  })
+  app.use(limiter)
+}
 
 // Body Size Limit
 app.use(express.json({ limit: '10kb' }))
