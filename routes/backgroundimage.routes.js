@@ -4,7 +4,7 @@ const upload = require("../middleware/upload.config");
 const { authJWT } = require("../middleware/jwt.config");
 const {
   uploadSinglePicture,
-  getSingleImageByFolder,
+  getRandomBackgroundImage,
 } = require("../controller/cloudinary.controller");
 
 /**
@@ -34,7 +34,7 @@ const {
  *       500:
  *         description: Failed to fetch background image
  */
-router.get("/", getSingleImageByFolder);
+router.get("/", getRandomBackgroundImage);
 
 /**
  * @swagger

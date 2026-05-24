@@ -1,5 +1,7 @@
 const cloudinary = require("../config/cloudinary.config");
 
+let lastBackgroundImagePublicId = null;
+
 function randomizer(id) {
   const randomId = Math.floor(Math.random() * id.length);
   return id[randomId];
@@ -93,7 +95,7 @@ const uploadSinglePicture = async (req, res) => {
   }
 };
 
-const getSingleImageByFolder = async (req, res) => {
+const getRandomBackgroundImage = async (req, res) => {
   try {
     const result = await cloudinary.api.resources_by_asset_folder("wallpapers", {
       type: "upload",
@@ -102,7 +104,17 @@ const getSingleImageByFolder = async (req, res) => {
     });
 
     const publicIds = result.resources.map((img) => img.public_id);
-    const chosenPublicId = randomizer(publicIds);
+    if (!publicIds.length) {
+      res.status(404).json({ error: "No background image found in wallpapers folder" });
+      return;
+    }
+
+    const availablePublicIds =
+      publicIds.length > 1
+        ? publicIds.filter((publicId) => publicId !== lastBackgroundImagePublicId)
+        : publicIds;
+
+    const chosenPublicId = randomizer(availablePublicIds.length ? availablePublicIds : publicIds);
 
     if (!chosenPublicId) {
       res.status(404).json({ error: "No background image found in wallpapers folder" });
@@ -110,6 +122,7 @@ const getSingleImageByFolder = async (req, res) => {
     }
 
     const chosenImage = result.resources.find((img) => img.public_id === chosenPublicId);
+    lastBackgroundImagePublicId = chosenPublicId;
 
     res.status(200).json({
       public_id: chosenPublicId,
@@ -126,5 +139,5 @@ module.exports = {
   getImagesByFolder,
   uploadScrappedPictures,
   uploadSinglePicture,
-  getSingleImageByFolder,
+  getRandomBackgroundImage,
 };
