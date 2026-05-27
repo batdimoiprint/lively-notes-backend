@@ -94,6 +94,10 @@ app.use((req, res) => {
 const port = process.env.PORT || 3000;
 
 if (require.main === module) {
+  // Start the reminder scheduler for push notifications
+  const { startScheduler } = require("./service/reminderScheduler.js");
+  startScheduler();
+
   app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
   });

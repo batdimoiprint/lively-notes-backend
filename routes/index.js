@@ -45,7 +45,13 @@ const registerRoutes = (app) => {
   const sectionsRouter = require("./sections.routes.js");
   app.use("/api/sections", authJWT, sectionsRouter);
 
+  // Calendar Notes Routes
+  const calendarNotesRouter = require("./calendarNotes.routes.js");
+  app.use("/api/calendar-notes", authJWT, calendarNotesRouter);
 
+  // Push Notification Routes
+  const pushRouter = require("./push.routes.js");
+  app.use("/api/push", authJWT, pushRouter);
 
 };
 
