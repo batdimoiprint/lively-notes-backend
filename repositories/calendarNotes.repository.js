@@ -19,6 +19,14 @@ const {
 const myDB = client.db("livelydesktopnotes");
 const calendarNotesCollection = myDB.collection("calendarNotes");
 
+// Keep dynamo-read responses shaped like Mongo docs: the derived GSI
+// attributes are storage plumbing, not part of the API contract.
+function stripDerived(items) {
+  return items.map(
+    ({ monthKey, dateCreatedAt, pendingPk, pendingReminderAt, ...rest }) => rest
+  );
+}
+
 function byDateCreatedAtAsc(a, b) {
   const dateCompare = (a.date || "").localeCompare(b.date || "");
   if (dateCompare !== 0) return dateCompare;
@@ -57,7 +65,7 @@ async function getAll() {
     const { Items } = await docClient.send(
       new ScanCommand({ TableName: TABLES.calendarNotes })
     );
-    return fromDynamoItems(Items).sort(byDateCreatedAtAsc);
+    return stripDerived(fromDynamoItems(Items)).sort(byDateCreatedAtAsc);
   }
   const cursor = calendarNotesCollection
     .find({})
@@ -77,7 +85,7 @@ async function getByMonth(year, month) {
         ExpressionAttributeValues: { ":mk": monthKey },
       })
     );
-    return fromDynamoItems(Items);
+    return stripDerived(fromDynamoItems(Items));
   }
 
   const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
@@ -168,7 +176,7 @@ async function getDueReminders() {
         ExpressionAttributeValues: { ":pk": "PENDING", ":now": toIso(now) },
       })
     );
-    return fromDynamoItems(Items);
+    return stripDerived(fromDynamoItems(Items));
   }
 
   const cursor = calendarNotesCollection.find({
