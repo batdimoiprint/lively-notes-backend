@@ -1,0 +1,33 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LivelyNotesDynamoTables",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-notes",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-notes/index/*",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-sections",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-todos",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-calendar-notes",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-calendar-notes/index/*",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-settings",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-push-subscriptions",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-ig-posts",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-ig-posts/index/*",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-user"
+      ]
+    }
+  ]
+}
