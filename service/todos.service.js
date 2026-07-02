@@ -1,44 +1,27 @@
-const client = require("../db/db.js");
-const { ObjectId } = require("mongodb");
-const myDB = client.db("livelydesktopnotes");
-const todosCollection = myDB.collection("todos");
+const todosRepository = require("../repositories/todos.repository.js");
+const { isValidId } = require("../repositories/repository.util.js");
 
 async function getAll() {
-  const cursor = await todosCollection.find({}).sort({ createdAt: -1 });
-  return cursor.toArray();
+  return todosRepository.getAll();
 }
 
 async function createTodo(payload) {
-  const todo = {
-    text: payload.text,
-    completed: false,
-    createdAt: new Date(),
-  };
-  const result = await todosCollection.insertOne(todo);
-  return { _id: result.insertedId, ...todo };
+  return todosRepository.create({ text: payload.text });
 }
 
 async function deleteTodo(id) {
-  if (!ObjectId.isValid(id)) {
+  if (!isValidId(id)) {
     return { acknowledged: false, deletedCount: 0 };
   }
-
-  const _id = new ObjectId(id);
-  const result = await todosCollection.deleteOne({ _id });
-  return {
-    acknowledged: result.acknowledged,
-    deletedCount: result.deletedCount,
-  };
+  return todosRepository.remove(id);
 }
 
 async function updateTodo(payload) {
-  if (!ObjectId.isValid(payload._id)) {
+  if (!isValidId(payload._id)) {
     return { acknowledged: false, modified: 0 };
   }
 
-  const id = new ObjectId(payload._id);
   const updateFields = {};
-  
   if (payload.text !== undefined) {
     updateFields.text = payload.text;
   }
@@ -46,19 +29,7 @@ async function updateTodo(payload) {
     updateFields.completed = payload.completed;
   }
 
-  const result = await todosCollection.updateOne(
-    { _id: id },
-    { $set: updateFields }
-  );
-  
-  return {
-    acknowledged: result.acknowledged,
-    modified: result.modifiedCount,
-  };
-}
-
-function isValidObjectId(id) {
-  return ObjectId.isValid(id);
+  return todosRepository.update(payload._id, updateFields);
 }
 
 module.exports = {
@@ -66,5 +37,5 @@ module.exports = {
   createTodo,
   deleteTodo,
   updateTodo,
-  isValidObjectId,
+  isValidId,
 };

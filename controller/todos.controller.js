@@ -26,7 +26,7 @@ async function deleteTodo(req, res, next) {
   try {
     const resourceId = req.body._id;
 
-    if (!todosService.isValidObjectId(resourceId)) {
+    if (!todosService.isValidId(resourceId)) {
       return res.status(400).json({ error: "Invalid Format" });
     }
 
@@ -46,7 +46,7 @@ async function updateTodo(req, res, next) {
   try {
     const resourceId = req.body._id;
 
-    if (!todosService.isValidObjectId(resourceId)) {
+    if (!todosService.isValidId(resourceId)) {
       return res.status(400).json({ error: "Invalid Format" });
     }
 

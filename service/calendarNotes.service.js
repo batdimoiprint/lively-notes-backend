@@ -1,28 +1,17 @@
-const client = require("../db/db.js");
-const { ObjectId } = require("mongodb");
-const myDB = client.db("livelydesktopnotes");
-const calendarNotesCollection = myDB.collection("calendarNotes");
+const calendarNotesRepository = require("../repositories/calendarNotes.repository.js");
+const { isValidId } = require("../repositories/repository.util.js");
 
 async function getAll() {
-  const cursor = await calendarNotesCollection.find({}).sort({ date: 1, createdAt: 1 });
-  return cursor.toArray();
+  return calendarNotesRepository.getAll();
 }
 
 async function getByMonth(year, month) {
   // month is 1-based (1=Jan, 12=Dec)
-  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
-  const endMonth = month === 12 ? 1 : month + 1;
-  const endYear = month === 12 ? year + 1 : year;
-  const endDate = `${endYear}-${String(endMonth).padStart(2, "0")}-01`;
-
-  const cursor = await calendarNotesCollection
-    .find({ date: { $gte: startDate, $lt: endDate } })
-    .sort({ date: 1, createdAt: 1 });
-  return cursor.toArray();
+  return calendarNotesRepository.getByMonth(year, month);
 }
 
 async function createNote(payload) {
-  const note = {
+  return calendarNotesRepository.create({
     title: payload.title,
     body: payload.body,
     date: payload.date, // "YYYY-MM-DD"
@@ -31,24 +20,22 @@ async function createNote(payload) {
     reminderSent: false,
     isWholeDay: !!payload.isWholeDay,
     createdAt: new Date(),
-  };
-  const result = await calendarNotesCollection.insertOne(note);
-  return { _id: result.insertedId, ...note };
+  });
 }
 
 async function updateNote(payload) {
-  if (!ObjectId.isValid(payload._id)) {
+  if (!isValidId(payload._id)) {
     return { acknowledged: false, modified: 0 };
   }
 
-  const id = new ObjectId(payload._id);
   const updateFields = {};
-
   if (payload.title !== undefined) updateFields.title = payload.title;
   if (payload.body !== undefined) updateFields.body = payload.body;
   if (payload.date !== undefined) updateFields.date = payload.date;
   if (payload.reminderAt !== undefined) {
-    updateFields.reminderAt = payload.reminderAt ? new Date(payload.reminderAt) : null;
+    updateFields.reminderAt = payload.reminderAt
+      ? new Date(payload.reminderAt)
+      : null;
     // Reset reminderSent if reminder time is changed
     updateFields.reminderSent = false;
   }
@@ -59,45 +46,22 @@ async function updateNote(payload) {
     updateFields.isWholeDay = !!payload.isWholeDay;
   }
 
-  const result = await calendarNotesCollection.updateOne({ _id: id }, { $set: updateFields });
-  return {
-    acknowledged: result.acknowledged,
-    modified: result.modifiedCount,
-  };
+  return calendarNotesRepository.update(payload._id, updateFields);
 }
 
 async function deleteNote(id) {
-  if (!ObjectId.isValid(id)) {
+  if (!isValidId(id)) {
     return { acknowledged: false, deletedCount: 0 };
   }
-
-  const _id = new ObjectId(id);
-  const result = await calendarNotesCollection.deleteOne({ _id });
-  return {
-    acknowledged: result.acknowledged,
-    deletedCount: result.deletedCount,
-  };
+  return calendarNotesRepository.remove(id);
 }
 
 async function getDueReminders() {
-  const now = new Date();
-  const cursor = await calendarNotesCollection.find({
-    reminderAt: { $lte: now },
-    reminderSent: false,
-  });
-  return cursor.toArray();
+  return calendarNotesRepository.getDueReminders();
 }
 
 async function markReminderSent(id) {
-  const _id = new ObjectId(id);
-  return calendarNotesCollection.updateOne(
-    { _id },
-    { $set: { reminderSent: true } }
-  );
-}
-
-function isValidObjectId(id) {
-  return ObjectId.isValid(id);
+  return calendarNotesRepository.markReminderSent(id);
 }
 
 function isValidDateString(dateStr) {
@@ -116,6 +80,6 @@ module.exports = {
   deleteNote,
   getDueReminders,
   markReminderSent,
-  isValidObjectId,
+  isValidId,
   isValidDateString,
 };

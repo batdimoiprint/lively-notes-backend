@@ -3,227 +3,7 @@ const apify_client = require("../config/apify.client");
 const cloudinary = require("./cloudinary.controller");
 const igPostEvents = require("../service/igpost.events");
 const igUsernameService = require("../service/igusername.service");
-const client = require("../db/db.js");
-const myDB = client.db("livelydesktopnotes");
-const ig_posts_collection = myDB.collection("ig_posts");
-
-const APIFY_ACTOR_ID = "apify/instagram-scraper";
-
-function buildInstagramProfileUrl(username) {
-  return `https://www.instagram.com/${username}/`;
-}
-
-async function runInstagramActor(usernames) {
-  const urls = Array.isArray(usernames)
-    ? usernames.map(buildInstagramProfileUrl)
-    : [buildInstagramProfileUrl(usernames)];
-
-  return apify_client.actor(APIFY_ACTOR_ID).call({
-    addParentData: false,
-    directUrls: urls,
-    onlyPostsNewerThan: "1 week",
-    // resultsLimit: 1,
-    resultsType: "posts",
-    searchType: "user",
-  });
-}
-
-async function getActorItems(datasetId) {
-  const { items = [] } = await apify_client.dataset(datasetId).listItems();
-  return items;
-}
-
-function mapActorItems(items) {
-  return items
-    .filter(
-      (item) =>
-        item &&
-        !item.message && // drop error objects like { message: "ERR_CONNECT_FAIL ..." }
-        item.id &&
-        item.url &&
-        item.ownerUsername,
-    )
-    .map((item) => ({
-      postID: item.id,
-      caption: item.caption,
-      url: item.url,
-      likesCount: item.likesCount,
-      ownerUsername: item.ownerUsername,
-      images: Array.isArray(item.images) ? item.images : [],
-    }));
-}
-
-async function uploadPostToCloudinary(post) {
-  const cloudinaryPics = await Promise.all(
-    post.images.map(async (imgUrl) => {
-      const result = await cloudinary.uploadScrappedPictures({
-        image: imgUrl,
-        folder: `${post.ownerUsername}-${post.postID}`,
-      });
-
-      return {
-        public_id: result.public_id,
-        secure_url: result.secure_url,
-      };
-    }),
-  );
-
-  const { images, ...rest } = post;
-  return { ...rest, cloudinaryPics };
-}
-
-async function persistPosts(posts) {
-  if (posts.length === 0) {
-    return { insertedCount: 0 };
-  }
-
-  return ig_posts_collection.insertMany(posts);
-}
-
-async function updateExistingPostLikesCounts(posts) {
-  if (posts.length === 0) {
-    return { updatedCount: 0 };
-  }
-
-  const updateResults = await Promise.all(
-    posts.map((post) =>
-      ig_posts_collection.updateOne(
-        { url: post.url },
-        { $set: { likesCount: post.likesCount } },
-      ),
-    ),
-  );
-
-  return {
-    updatedCount: updateResults.reduce(
-      (count, result) => count + (result.modifiedCount ?? 0),
-      0,
-    ),
-  };
-}
-
-async function getExistingPostUrls(urls) {
-  const uniqueUrls = Array.from(
-    new Set(
-      urls
-        .filter((value) => typeof value === "string")
-        .map((value) => value.trim())
-        .filter(Boolean),
-    ),
-  );
-
-  if (uniqueUrls.length === 0) {
-    return new Set();
-  }
-
-  const existingPosts = await ig_posts_collection
-    .find(
-      { url: { $in: uniqueUrls } },
-      { projection: { url: 1, _id: 0 } },
-    )
-    .toArray();
-
-  return new Set(
-    existingPosts
-      .map((post) => post?.url)
-      .filter((value) => typeof value === "string" && value.trim()),
-  );
-}
-
-function dedupePostsByUrl(posts) {
-  const seenUrls = new Set();
-
-  return posts.filter((post) => {
-    const url = typeof post?.url === "string" ? post.url.trim() : "";
-
-    if (!url || seenUrls.has(url)) {
-      return false;
-    }
-
-    seenUrls.add(url);
-    return true;
-  });
-}
-
-async function scrapeAndStoreUsernames(usernames) {
-  const normalizedUsernames = (Array.isArray(usernames) ? usernames : [usernames])
-    .filter((value) => typeof value === "string" && value.trim())
-    .map((value) => value.trim());
-
-  if (normalizedUsernames.length === 0) {
-    return {
-      found: false,
-      message: "At least one valid username is required",
-    };
-  }
-
-  const usernameSet = new Set(normalizedUsernames.map((u) => u.toLowerCase()));
-
-  const run = await runInstagramActor(normalizedUsernames);
-  const items = await getActorItems(run.defaultDatasetId);
-
-  if (!Array.isArray(items) || items.length === 0) {
-    return {
-      found: false,
-      message: "No posts were returned for these usernames",
-      usernames: normalizedUsernames,
-    };
-  }
-
-  const filtered = mapActorItems(items).filter((post) => {
-    const owner = typeof post.ownerUsername === "string" ? post.ownerUsername.trim() : "";
-    return owner && usernameSet.has(owner.toLowerCase());
-  });
-  if (!Array.isArray(filtered) || filtered.length === 0) {
-    return {
-      found: false,
-      message: "No valid posts to process for these usernames",
-      usernames: normalizedUsernames,
-    };
-  }
-
-  const uniquePosts = dedupePostsByUrl(filtered);
-  const existingUrls = await getExistingPostUrls(uniquePosts.map((post) => post.url));
-  const duplicatePosts = uniquePosts.filter((post) => existingUrls.has(post.url));
-  const newPosts = uniquePosts.filter((post) => !existingUrls.has(post.url));
-
-  const { updatedCount } = await updateExistingPostLikesCounts(duplicatePosts);
-
-  if (newPosts.length === 0) {
-    return {
-      found: true,
-      usernames: normalizedUsernames,
-      insertedCount: 0,
-      updatedCount,
-      skippedDuplicateCount: duplicatePosts.length,
-      data: [],
-      message: duplicatePosts.length > 0 ? "Existing posts updated" : "No new posts to store",
-    };
-  }
-
-  const postsWithCloudinary = await Promise.all(
-    newPosts.map(uploadPostToCloudinary),
-  );
-
-  if (!Array.isArray(postsWithCloudinary) || postsWithCloudinary.length === 0) {
-    return {
-      found: false,
-      message: "No posts to store after Cloudinary upload",
-      usernames: normalizedUsernames,
-    };
-  }
-
-  await persistPosts(postsWithCloudinary);
-
-  return {
-    found: true,
-    usernames: normalizedUsernames,
-    insertedCount: postsWithCloudinary.length,
-    updatedCount,
-    skippedDuplicateCount: duplicatePosts.length,
-    data: postsWithCloudinary,
-  };
-}
+const apifyService = require("../service/apifyService");
 
 async function getScrappedPictures(req, res) {
   // TODO:  add validation for date ranges of fetch so no same content will be uploaded
@@ -272,9 +52,8 @@ async function getActorInfo(req, res) {
     res.status(200).json(actor);
     console.log(actor); // Get actor metadata
   } catch (error) {
-    res.status(500).json(actor);
     console.log(error);
-    throw error;
+    res.status(500).json({ message: error.message });
   }
 }
 
@@ -288,7 +67,7 @@ async function runActor(req, res) {
       });
     }
 
-    const result = await scrapeAndStoreUsernames([username]);
+    const result = await apifyService.scrapeAndStoreUsernames([username]);
 
     if (!result.found) {
       return res.status(404).json({
@@ -337,7 +116,7 @@ async function refreshActors(req, res) {
       return res.status(404).json({ message: "No ig usernames configured" });
     }
 
-    const scrapeResult = await scrapeAndStoreUsernames(usernames);
+    const scrapeResult = await apifyService.scrapeAndStoreUsernames(usernames);
 
     if (!scrapeResult.found) {
       return res.status(200).json({

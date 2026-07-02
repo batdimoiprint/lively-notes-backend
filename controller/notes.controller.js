@@ -24,7 +24,7 @@ async function deleteNote(req, res, next) {
   try {
     const resourceId = req.body._id;
 
-    if (!notesService.isValidObjectId(resourceId)) {
+    if (!notesService.isValidId(resourceId)) {
       return res.status(400).json({ error: "Invalid Format" });
     }
 
@@ -44,7 +44,7 @@ async function editNotes(req, res, next) {
   try {
     const resourceId = req.body._id;
 
-    if (!notesService.isValidObjectId(resourceId)) {
+    if (!notesService.isValidId(resourceId)) {
       return res.status(400).json({ error: "Invalid Format" });
     }
 
@@ -70,7 +70,7 @@ async function reorderNotes(req, res, next) {
     }
 
     for (const id of orderedIds) {
-      if (!notesService.isValidObjectId(id)) {
+      if (!notesService.isValidId(id)) {
         return res.status(400).json({ error: `Invalid ID format: ${id}` });
       }
     }
@@ -90,7 +90,7 @@ async function moveNoteToSection(req, res, next) {
       return res.status(400).json({ error: "noteId and sectionId are required" });
     }
 
-    if (!notesService.isValidObjectId(noteId)) {
+    if (!notesService.isValidId(noteId)) {
       return res.status(400).json({ error: "Invalid noteId format" });
     }
 
