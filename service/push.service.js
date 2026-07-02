@@ -1,7 +1,5 @@
 const webpush = require("web-push");
-const client = require("../db/db.js");
-const myDB = client.db("livelydesktopnotes");
-const subscriptionsCollection = myDB.collection("pushSubscriptions");
+const pushSubscriptionsRepository = require("../repositories/pushSubscriptions.repository.js");
 
 // Configure VAPID
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
@@ -13,21 +11,15 @@ if (vapidPublicKey && vapidPrivateKey && vapidSubject) {
 }
 
 async function saveSubscription(subscription) {
-  // Upsert by endpoint to avoid duplicates
-  const result = await subscriptionsCollection.updateOne(
-    { endpoint: subscription.endpoint },
-    { $set: { ...subscription, updatedAt: new Date() } },
-    { upsert: true }
-  );
-  return result;
+  return pushSubscriptionsRepository.save(subscription);
 }
 
 async function removeSubscription(endpoint) {
-  return subscriptionsCollection.deleteOne({ endpoint });
+  return pushSubscriptionsRepository.remove(endpoint);
 }
 
 async function getAllSubscriptions() {
-  return subscriptionsCollection.find({}).toArray();
+  return pushSubscriptionsRepository.getAll();
 }
 
 async function sendNotification(subscription, payload) {

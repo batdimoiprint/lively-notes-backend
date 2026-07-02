@@ -1,6 +1,4 @@
-const client = require("../db/db.js");
-const myDB = client.db("livelydesktopnotes");
-const userCollection = myDB.collection("user");
+const userRepository = require("../repositories/user.repository.js");
 const bcrypt = require("bcrypt");
 const {
   generateAccessToken,
@@ -13,24 +11,23 @@ const {
 
 async function login(req, res) {
   try {
-    const password = await req.body;
+    const password = req.body;
 
     if (!password) {
       res.status(400).send();
     } else {
-      const hashedPassword = await userCollection.find().toArray();
+      // Single-tenant app: the one user row holds the hashed passkey.
+      const user = await userRepository.getFirstUser();
 
-      const isMatch = await bcrypt.compare(
-        password.code,
-        hashedPassword[0].code,
-      );
+      const isMatch =
+        user && (await bcrypt.compare(password.code, user.code));
 
       if (!isMatch) {
         res.status(400).send();
       } else {
-        const user = hashedPassword[0]._id.toString();
-        const accessToken = generateAccessToken({ userId: user });
-        const refreshToken = generateRefreshToken({ userId: user });
+        const userId = String(user._id);
+        const accessToken = generateAccessToken({ userId });
+        const refreshToken = generateRefreshToken({ userId });
         res.cookie("access_token", accessToken, getAccessTokenCookieOptions());
         res.cookie("refresh_token", refreshToken, getRefreshTokenCookieOptions());
 
@@ -53,10 +50,9 @@ async function register(req, res) {
     if (!req) {
       throw new Error("No Request");
     }
-    const passkey = await req.body.code;
+    const passkey = req.body.code;
     const hashedPasskey = await bcrypt.hash(passkey, 12);
-    console.log(hashedPasskey);
-    await userCollection.insertOne({ code: hashedPasskey, igUsernames: [], pomodoroSound: null });
+    await userRepository.create({ code: hashedPasskey });
 
     res.status(201).send();
   } catch (error) {

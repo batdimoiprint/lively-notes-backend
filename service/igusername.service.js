@@ -1,28 +1,15 @@
-const client = require("../db/db.js");
-const { ObjectId } = require("mongodb");
-
-const myDB = client.db("livelydesktopnotes");
-const userCollection = myDB.collection("user");
+const userRepository = require("../repositories/user.repository.js");
+const { isValidId } = require("../repositories/repository.util.js");
 
 function normalizeUsername(value) {
   return value.trim().toLowerCase();
 }
 
-function parseUserObjectId(userId) {
-  if (!ObjectId.isValid(userId)) {
-    return null;
-  }
-
-  return new ObjectId(userId);
-}
-
 async function getUserById(userId) {
-  const objectId = parseUserObjectId(userId);
-  if (!objectId) {
+  if (!isValidId(userId)) {
     return null;
   }
-
-  return userCollection.findOne({ _id: objectId });
+  return userRepository.getById(userId);
 }
 
 function getIgUsernamesFromUser(user) {
@@ -68,14 +55,7 @@ async function createIgUsername(userId, igUsername) {
 
   const updated = [...currentItems, created];
 
-  await userCollection.updateOne(
-    { _id: user._id },
-    {
-      $set: {
-        igUsernames: updated,
-      },
-    },
-  );
+  await userRepository.updateIgUsernames(user._id, updated);
 
   return { duplicate: false, notFound: false, data: created };
 }
@@ -114,14 +94,7 @@ async function updateIgUsername(userId, autoIncrement, igUsername) {
     return { itemNotFound: true };
   }
 
-  await userCollection.updateOne(
-    { _id: user._id },
-    {
-      $set: {
-        igUsernames: updated,
-      },
-    },
-  );
+  await userRepository.updateIgUsernames(user._id, updated);
 
   return { duplicate: false, notFound: false, itemNotFound: false };
 }
@@ -139,14 +112,7 @@ async function deleteIgUsername(userId, autoIncrement) {
     return { itemNotFound: true };
   }
 
-  await userCollection.updateOne(
-    { _id: user._id },
-    {
-      $set: {
-        igUsernames: updated,
-      },
-    },
-  );
+  await userRepository.updateIgUsernames(user._id, updated);
 
   return { notFound: false, itemNotFound: false };
 }

@@ -70,7 +70,7 @@ async function updateNote(req, res, next) {
   try {
     const { _id, title, body, date, reminderAt, reminderInterval, isWholeDay } = req.body;
 
-    if (!_id || !calendarNotesService.isValidObjectId(_id)) {
+    if (!_id || !calendarNotesService.isValidId(_id)) {
       return res.status(400).json({ error: "Valid _id is required" });
     }
 
@@ -113,7 +113,7 @@ async function deleteNote(req, res, next) {
   try {
     const { _id } = req.body;
 
-    if (!_id || !calendarNotesService.isValidObjectId(_id)) {
+    if (!_id || !calendarNotesService.isValidId(_id)) {
       return res.status(400).json({ error: "Valid _id is required" });
     }
 

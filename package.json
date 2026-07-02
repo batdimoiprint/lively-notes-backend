@@ -12,6 +12,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1079.0",
+    "@aws-sdk/lib-dynamodb": "^3.1079.0",
     "apify-client": "^2.23.3",
     "axios": "^1.16.1",
     "bcrypt": "^6.0.0",

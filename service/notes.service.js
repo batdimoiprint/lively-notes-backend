@@ -1,107 +1,58 @@
-const client = require("../db/db.js");
-const { ObjectId } = require("mongodb");
-const myDB = client.db("livelydesktopnotes");
-const notesCollection = myDB.collection("notes");
+const notesRepository = require("../repositories/notes.repository.js");
+const { isValidId } = require("../repositories/repository.util.js");
 
 async function getAll() {
-  const cursor = await notesCollection.find({}).sort({ order: 1 });
-  return cursor.toArray();
+  return notesRepository.getAll();
 }
 
 async function getBySection(sectionId) {
-  const cursor = await notesCollection.find({ sectionId }).sort({ order: 1 });
-  return cursor.toArray();
+  return notesRepository.getBySection(sectionId);
 }
 
 async function createNote(payload) {
-  const note = {
-    title: payload.title,
-    body: payload.body,
-    sectionId: payload.sectionId || "default",
-  };
-  await notesCollection.insertOne(note);
-  return { ...note };
+  return notesRepository.create(payload);
 }
 
 async function deleteNote(id) {
   // defensive check (controller already validates, but keep service safe)
-  if (!ObjectId.isValid(id)) {
+  if (!isValidId(id)) {
     return { acknowledged: false, deletedCount: 0 };
   }
-
-  const _id = new ObjectId(id);
-  const result = await notesCollection.deleteOne({ _id });
-  return {
-    acknowledged: result.acknowledged,
-    deletedCount: result.deletedCount,
-  };
+  return notesRepository.remove(id);
 }
 
 async function updateNote(payload) {
   try {
-    if (!ObjectId.isValid(payload._id)) {
+    if (!isValidId(payload._id)) {
       return { acknowledged: false, modified: 0 };
     }
 
-    const id = new ObjectId(payload._id);
     const updateFields = {};
-
     if (payload.title !== undefined) {
       updateFields.title = payload.title;
     }
-
     if (payload.body !== undefined) {
       updateFields.body = payload.body;
     }
-
     if (payload.sectionId !== undefined) {
       updateFields.sectionId = payload.sectionId;
     }
 
-    const result = await notesCollection.updateOne({ _id: id }, { $set: updateFields });
-    return {
-      acknowledged: result.acknowledged,
-      modified: result.modifiedCount,
-    };
+    return await notesRepository.update(payload._id, updateFields);
   } catch (error) {
     console.log(error);
   }
 }
 
 async function updateOrder(orderedIds) {
-  const bulkOps = orderedIds.map((id, index) => ({
-    updateOne: {
-      filter: { _id: new ObjectId(id) },
-      update: { $set: { order: index } },
-    },
-  }));
-
-  const result = await notesCollection.bulkWrite(bulkOps);
-  return {
-    acknowledged: result.ok === 1,
-    modified: result.modifiedCount,
-  };
+  return notesRepository.updateOrder(orderedIds);
 }
 
 async function moveToSection(noteId, sectionId) {
-  if (!ObjectId.isValid(noteId)) {
+  if (!isValidId(noteId)) {
     return { acknowledged: false, modified: 0 };
   }
-
-  const id = new ObjectId(noteId);
-  const result = await notesCollection.updateOne(
-    { _id: id },
-    { $set: { sectionId } }
-  );
-
-  return {
-    acknowledged: result.acknowledged,
-    modified: result.modifiedCount,
-  };
-}
-
-function isValidObjectId(id) {
-  return ObjectId.isValid(id);
+  return notesRepository.update(noteId, { sectionId });
 }
 
 module.exports = {
@@ -112,5 +63,5 @@ module.exports = {
   updateNote,
   updateOrder,
   moveToSection,
-  isValidObjectId,
+  isValidId,
 };

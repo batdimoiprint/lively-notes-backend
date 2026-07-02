@@ -1,11 +1,13 @@
+// Single home for the Instagram scrape-and-store pipeline. The Express
+// controller (controller/apify.controller.js) and the EventBridge cron
+// (lambda.js → refreshAllUsers) both call scrapeAndStoreUsernames — the logic
+// used to be duplicated across both files.
 const apify_client = require("../config/apify.client");
 const cloudinary = require("../controller/cloudinary.controller");
-const igPostEvents = require("../service/igpost.events");
-const igUsernameService = require("../service/igusername.service");
-const client = require("../db/db.js");
-const myDB = client.db("livelydesktopnotes");
-const ig_posts_collection = myDB.collection("ig_posts");
-const userCollection = myDB.collection("user");
+const igPostEvents = require("./igpost.events");
+const igUsernameService = require("./igusername.service");
+const igPostsRepository = require("../repositories/igPosts.repository.js");
+const userRepository = require("../repositories/user.repository.js");
 
 const APIFY_ACTOR_ID = "apify/instagram-scraper";
 
@@ -13,12 +15,14 @@ function buildInstagramProfileUrl(username) {
   return `https://www.instagram.com/${username}/`;
 }
 
-async function runInstagramActor(username) {
+async function runInstagramActor(usernames, options = {}) {
+  const urls = usernames.map(buildInstagramProfileUrl);
+
   return apify_client.actor(APIFY_ACTOR_ID).call({
     addParentData: false,
-    directUrls: [buildInstagramProfileUrl(username)],
-    onlyPostsNewerThan: "1 day",
-    resultsLimit: 1,
+    directUrls: urls,
+    onlyPostsNewerThan: options.onlyPostsNewerThan ?? "1 week",
+    ...(options.resultsLimit ? { resultsLimit: options.resultsLimit } : {}),
     resultsType: "posts",
     searchType: "user",
   });
@@ -30,14 +34,23 @@ async function getActorItems(datasetId) {
 }
 
 function mapActorItems(items) {
-  return items.map((item) => ({
-    postID: item.id,
-    caption: item.caption,
-    url: item.url,
-    likesCount: item.likesCount,
-    ownerUsername: item.ownerUsername,
-    images: item.images ?? [],
-  }));
+  return items
+    .filter(
+      (item) =>
+        item &&
+        !item.message && // drop error objects like { message: "ERR_CONNECT_FAIL ..." }
+        item.id &&
+        item.url &&
+        item.ownerUsername,
+    )
+    .map((item) => ({
+      postID: item.id,
+      caption: item.caption,
+      url: item.url,
+      likesCount: item.likesCount,
+      ownerUsername: item.ownerUsername,
+      images: Array.isArray(item.images) ? item.images : [],
+    }));
 }
 
 async function uploadPostToCloudinary(post) {
@@ -59,64 +72,6 @@ async function uploadPostToCloudinary(post) {
   return { ...rest, cloudinaryPics };
 }
 
-async function persistPosts(posts) {
-  if (posts.length === 0) {
-    return { insertedCount: 0 };
-  }
-
-  return ig_posts_collection.insertMany(posts);
-}
-
-async function updateExistingPostLikesCounts(posts) {
-  if (posts.length === 0) {
-    return { updatedCount: 0 };
-  }
-
-  const updateResults = await Promise.all(
-    posts.map((post) =>
-      ig_posts_collection.updateOne(
-        { url: post.url },
-        { $set: { likesCount: post.likesCount } },
-      ),
-    ),
-  );
-
-  return {
-    updatedCount: updateResults.reduce(
-      (count, result) => count + (result.modifiedCount ?? 0),
-      0,
-    ),
-  };
-}
-
-async function getExistingPostUrls(urls) {
-  const uniqueUrls = Array.from(
-    new Set(
-      urls
-        .filter((value) => typeof value === "string")
-        .map((value) => value.trim())
-        .filter(Boolean),
-    ),
-  );
-
-  if (uniqueUrls.length === 0) {
-    return new Set();
-  }
-
-  const existingPosts = await ig_posts_collection
-    .find(
-      { url: { $in: uniqueUrls } },
-      { projection: { url: 1, _id: 0 } },
-    )
-    .toArray();
-
-  return new Set(
-    existingPosts
-      .map((post) => post?.url)
-      .filter((value) => typeof value === "string" && value.trim()),
-  );
-}
-
 function dedupePostsByUrl(posts) {
   const seenUrls = new Set();
 
@@ -132,47 +87,56 @@ function dedupePostsByUrl(posts) {
   });
 }
 
-async function scrapeAndStoreUsername(username) {
-  const normalizedUsername = typeof username === "string" ? username.trim() : "";
+async function scrapeAndStoreUsernames(usernames, options = {}) {
+  const normalizedUsernames = (Array.isArray(usernames) ? usernames : [usernames])
+    .filter((value) => typeof value === "string" && value.trim())
+    .map((value) => value.trim());
 
-  if (!normalizedUsername) {
+  if (normalizedUsernames.length === 0) {
     return {
       found: false,
-      message: "username is required",
+      message: "At least one valid username is required",
     };
   }
 
-  const run = await runInstagramActor(normalizedUsername);
+  const usernameSet = new Set(normalizedUsernames.map((u) => u.toLowerCase()));
+
+  const run = await runInstagramActor(normalizedUsernames, options);
   const items = await getActorItems(run.defaultDatasetId);
 
   if (!Array.isArray(items) || items.length === 0) {
     return {
       found: false,
-      message: "No posts were returned for this username",
-      username: normalizedUsername,
+      message: "No posts were returned for these usernames",
+      usernames: normalizedUsernames,
     };
   }
 
-  const filtered = mapActorItems(items);
+  const filtered = mapActorItems(items).filter((post) => {
+    const owner = typeof post.ownerUsername === "string" ? post.ownerUsername.trim() : "";
+    return owner && usernameSet.has(owner.toLowerCase());
+  });
   if (!Array.isArray(filtered) || filtered.length === 0) {
     return {
       found: false,
-      message: "No valid posts to process for this username",
-      username: normalizedUsername,
+      message: "No valid posts to process for these usernames",
+      usernames: normalizedUsernames,
     };
   }
 
   const uniquePosts = dedupePostsByUrl(filtered);
-  const existingUrls = await getExistingPostUrls(uniquePosts.map((post) => post.url));
+  const existingUrls = await igPostsRepository.getExistingUrls(
+    uniquePosts.map((post) => post.url),
+  );
   const duplicatePosts = uniquePosts.filter((post) => existingUrls.has(post.url));
   const newPosts = uniquePosts.filter((post) => !existingUrls.has(post.url));
 
-  const { updatedCount } = await updateExistingPostLikesCounts(duplicatePosts);
+  const { updatedCount } = await igPostsRepository.updateLikesCounts(duplicatePosts);
 
   if (newPosts.length === 0) {
     return {
       found: true,
-      username: normalizedUsername,
+      usernames: normalizedUsernames,
       insertedCount: 0,
       updatedCount,
       skippedDuplicateCount: duplicatePosts.length,
@@ -189,15 +153,15 @@ async function scrapeAndStoreUsername(username) {
     return {
       found: false,
       message: "No posts to store after Cloudinary upload",
-      username: normalizedUsername,
+      usernames: normalizedUsernames,
     };
   }
 
-  await persistPosts(postsWithCloudinary);
+  await igPostsRepository.insertPosts(postsWithCloudinary);
 
   return {
     found: true,
-    username: normalizedUsername,
+    usernames: normalizedUsernames,
     insertedCount: postsWithCloudinary.length,
     updatedCount,
     skippedDuplicateCount: duplicatePosts.length,
@@ -207,16 +171,16 @@ async function scrapeAndStoreUsername(username) {
 
 async function refreshAllUsers() {
   try {
-    const users = await userCollection.find({}).toArray();
+    const users = await userRepository.getAllUsers();
     console.log(`Starting refresh for ${users.length} users...`);
 
     for (const user of users) {
-      const userId = user._id.toString();
+      const userId = String(user._id);
       console.log(`Processing user: ${userId}`);
 
       try {
         const result = await igUsernameService.listIgUsernames(userId);
-        
+
         if (result.notFound || !result.data || result.data.length === 0) {
           console.log(`No usernames configured for user: ${userId}`);
           continue;
@@ -238,17 +202,22 @@ async function refreshAllUsers() {
         for (const username of usernames) {
           try {
             console.log(`Scraping username: ${username} for user: ${userId}`);
-            const scrapeResult = await scrapeAndStoreUsername(username);
+            // The cron runs daily, so scrape one username at a time with a
+            // tight window (same knobs the old cron-only implementation used).
+            const scrapeResult = await scrapeAndStoreUsernames([username], {
+              onlyPostsNewerThan: "1 day",
+              resultsLimit: 1,
+            });
 
             if (!scrapeResult.found) {
               console.log(`Couldn't find/store posts for ${username}: ${scrapeResult.message}`);
               continue;
             }
 
-            refreshedUsernames.push(scrapeResult.username);
+            refreshedUsernames.push(...scrapeResult.usernames);
             totalInsertedCount += scrapeResult.insertedCount || 0;
             totalUpdatedCount += scrapeResult.updatedCount || 0;
-            
+
           } catch (error) {
             console.error(`Error scraping ${username} for user ${userId}:`, error.message);
           }
@@ -269,7 +238,7 @@ async function refreshAllUsers() {
         console.error(`Error processing user ${userId}:`, err.message);
       }
     }
-    
+
     console.log("Finished refreshAllUsers cron execution.");
   } catch (globalErr) {
     console.error("Global error in refreshAllUsers:", globalErr.message);
@@ -277,5 +246,6 @@ async function refreshAllUsers() {
 }
 
 module.exports = {
-  refreshAllUsers
+  scrapeAndStoreUsernames,
+  refreshAllUsers,
 };

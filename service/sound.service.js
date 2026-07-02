@@ -1,46 +1,18 @@
-const client = require("../db/db.js");
-const { ObjectId } = require("mongodb");
-
-const myDB = client.db("livelydesktopnotes");
-const userCollection = myDB.collection("user");
-
-function parseUserObjectId(userId) {
-  if (!ObjectId.isValid(userId)) {
-    return null;
-  }
-
-  return new ObjectId(userId);
-}
-
-async function getUserById(userId) {
-  const objectId = parseUserObjectId(userId);
-  if (!objectId) {
-    return null;
-  }
-
-  return userCollection.findOne({ _id: objectId });
-}
-
-function getSoundFromUser(user) {
-  if (!user || !user.pomodoroSound) {
-    return null;
-  }
-
-  return user.pomodoroSound;
-}
+// ⚠️ The pomodoro sound is an embedded binary blob on the user document and is
+// EXPLICITLY OUT OF SCOPE for the DynamoDB migration — these calls are
+// MongoDB-only regardless of READ_SOURCE (see user.repository.js).
+const userRepository = require("../repositories/user.repository.js");
+const { isValidId } = require("../repositories/repository.util.js");
 
 async function getPomodoroSound(userId) {
-  const user = await getUserById(userId);
-  if (!user) {
+  if (!isValidId(userId)) {
     return { notFound: true, sound: null };
   }
-
-  return { notFound: false, sound: getSoundFromUser(user) };
+  return userRepository.getPomodoroSound(userId);
 }
 
 async function upsertPomodoroSound(userId, file) {
-  const user = await getUserById(userId);
-  if (!user) {
+  if (!isValidId(userId)) {
     return { notFound: true };
   }
 
@@ -52,34 +24,19 @@ async function upsertPomodoroSound(userId, file) {
     updatedAt: new Date(),
   };
 
-  await userCollection.updateOne(
-    { _id: user._id },
-    {
-      $set: {
-        pomodoroSound: sound,
-      },
-    },
-  );
+  const result = await userRepository.setPomodoroSound(userId, sound);
+  if (result.notFound) {
+    return { notFound: true };
+  }
 
   return { notFound: false, sound };
 }
 
 async function deletePomodoroSound(userId) {
-  const user = await getUserById(userId);
-  if (!user) {
+  if (!isValidId(userId)) {
     return { notFound: true };
   }
-
-  await userCollection.updateOne(
-    { _id: user._id },
-    {
-      $set: {
-        pomodoroSound: null,
-      },
-    },
-  );
-
-  return { notFound: false };
+  return userRepository.setPomodoroSound(userId, null);
 }
 
 module.exports = {
