@@ -3,24 +3,40 @@ const syncService = require("../service/sync.service");
 
 async function listNotes(req, res, next) {
   try {
+    let headerSyncVal = null;
+    if (req.headers) {
+      for (const k of Object.keys(req.headers)) {
+        if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") {
+          headerSyncVal = req.headers[k];
+          break;
+        }
+      }
+    }
+    if (!headerSyncVal && req.apiGateway?.event?.headers) {
+      for (const k of Object.keys(req.apiGateway.event.headers)) {
+        if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") {
+          headerSyncVal = req.apiGateway.event.headers[k];
+          break;
+        }
+      }
+    }
+
     const origUrl = req.originalUrl || req.url || "";
     const rawQ = req.apiGateway?.event?.rawQueryString || "";
 
     const isStatus =
+      headerSyncVal === "status" ||
       req.query?.sync === "status" ||
       req.apiGateway?.event?.queryStringParameters?.sync === "status" ||
       req.apiGateway?.event?.multiValueQueryStringParameters?.sync?.[0] === "status" ||
-      req.headers?.["x-sync"] === "status" ||
-      req.headers?.["X-Sync"] === "status" ||
       origUrl.includes("sync=status") ||
       rawQ.includes("sync=status");
 
     const isEvents =
+      headerSyncVal === "events" ||
       req.query?.sync === "events" ||
       req.apiGateway?.event?.queryStringParameters?.sync === "events" ||
       req.apiGateway?.event?.multiValueQueryStringParameters?.sync?.[0] === "events" ||
-      req.headers?.["x-sync"] === "events" ||
-      req.headers?.["X-Sync"] === "events" ||
       origUrl.includes("sync=events") ||
       rawQ.includes("sync=events");
 
