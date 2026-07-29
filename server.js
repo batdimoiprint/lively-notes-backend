@@ -22,39 +22,14 @@ const app = express();
 // Global Sync Realtime Interceptor (bypasses Express router matching & Lambda stage quirks)
 const syncService = require("./service/sync.service.js");
 app.use((req, res, next) => {
-  let syncParam = null;
-  const h = req.headers || {};
-  const egH = req.apiGateway?.event?.headers || {};
-  const q = req.query || {};
-  const egQ = req.apiGateway?.event?.queryStringParameters || {};
-  const egMQ = req.apiGateway?.event?.multiValueQueryStringParameters || {};
+  const fullUrl = req.originalUrl || req.url || "";
+  const isSyncStatus = fullUrl.includes("sync=status") || fullUrl.includes("sync-status");
+  const isSyncEvents = fullUrl.includes("sync=events") || fullUrl.includes("sync-events");
 
-  for (const k in h) {
-    if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") syncParam = h[k];
-  }
-  for (const k in egH) {
-    if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") syncParam = egH[k];
-  }
-  if (!syncParam) {
-    for (const k in q) {
-      if (k.toLowerCase() === "sync") syncParam = q[k];
-    }
-  }
-  if (!syncParam) {
-    for (const k in egQ) {
-      if (k.toLowerCase() === "sync") syncParam = egQ[k];
-    }
-  }
-  if (!syncParam) {
-    for (const k in egMQ) {
-      if (k.toLowerCase() === "sync") syncParam = egMQ[k]?.[0];
-    }
-  }
-
-  if (syncParam === "status") {
+  if (isSyncStatus) {
     return res.status(200).json(syncService.getSyncStatus());
   }
-  if (syncParam === "events") {
+  if (isSyncEvents) {
     const userId = req.user?.userId || req.user?.id || "global_user";
     return syncService.registerSyncStream(userId, res);
   }
