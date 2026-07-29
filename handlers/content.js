@@ -20,21 +20,28 @@ const sectionsRouter = require("../routes/sections.routes.js");
 const syncService = require("../service/sync.service");
 
 // Register Sync Routes at app level before authJWT router
-app.get(
-  ["/api/notes/sync-status", "/notes/sync-status", "/sync-status"],
-  (req, res) => {
-    res.status(200).json(syncService.getSyncStatus());
-  }
-);
+app.get("/sync-status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
+app.get("/notes/sync-status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
+app.get("/api/notes/sync-status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
 
-app.get(
-  ["/api/notes/sync-events", "/notes/sync-events", "/sync-events"],
-  authJWT,
-  (req, res) => {
-    const userId = req.user?.userId || req.user?.id || "global_user";
-    syncService.registerSyncStream(userId, res);
-  }
-);
+app.get("/sync-events", authJWT, (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
+app.get("/notes/sync-events", authJWT, (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
+app.get("/api/notes/sync-events", authJWT, (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
 
 // Register Routes
 app.use(["/api/notes", "/notes"], authJWT, notesRouter);
