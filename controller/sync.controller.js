@@ -9,6 +9,16 @@ function connectSyncStream(req, res, next) {
   }
 }
 
+function getSyncStatus(req, res, next) {
+  try {
+    const status = syncService.getSyncStatus();
+    res.status(200).json(status);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   connectSyncStream,
+  getSyncStatus,
 };

@@ -1,6 +1,8 @@
 const connectionsByUserId = new Map();
 const eventHistory = [];
 const MAX_HISTORY = 50;
+let lastEventTimestamp = Date.now();
+let lastEvent = null;
 
 function getUserConnections(userId) {
   if (!connectionsByUserId.has(userId)) {
@@ -32,7 +34,7 @@ function registerSyncStream(userId, res) {
   const userConnections = getUserConnections(userId);
   userConnections.add(res);
 
-  // Send periodic ping heartbeat every 15s to keep connection alive
+  // Send periodic ping heartbeat every 15s to prevent cloud idle timeouts
   const heartbeat = setInterval(() => {
     if (!res.writableEnded) {
       res.write(": ping\n\n");
@@ -54,12 +56,16 @@ function registerSyncStream(userId, res) {
 }
 
 function broadcastSyncEvent(userId, { domain, action, id }) {
+  const now = Date.now();
   const event = {
     domain,
     action,
     id: id ? String(id) : null,
-    timestamp: Date.now(),
+    timestamp: now,
   };
+
+  lastEventTimestamp = now;
+  lastEvent = event;
 
   // Record history
   eventHistory.push(event);
@@ -80,7 +86,15 @@ function broadcastSyncEvent(userId, { domain, action, id }) {
   return broadcastedCount > 0;
 }
 
+function getSyncStatus() {
+  return {
+    lastEventTimestamp,
+    lastEvent,
+  };
+}
+
 module.exports = {
   registerSyncStream,
   broadcastSyncEvent,
+  getSyncStatus,
 };
