@@ -18,8 +18,8 @@ const notesRouter = require("../routes/notes.routes.js");
 const sectionsRouter = require("../routes/sections.routes.js");
 
 // Register Routes
-app.use("/api/notes", authJWT, notesRouter);
-app.use("/api/sections", authJWT, sectionsRouter);
+app.use(["/api/notes", "/notes"], authJWT, notesRouter);
+app.use(["/api/sections", "/sections"], authJWT, sectionsRouter);
 
 registerErrorHandlers(app);
 

@@ -17,7 +17,7 @@ const app = createServiceApp();
 const todosRouter = require("../routes/todos.routes.js");
 
 // Register Routes
-app.use("/api/todos", authJWT, todosRouter);
+app.use(["/api/todos", "/todos"], authJWT, todosRouter);
 
 registerErrorHandlers(app);
 

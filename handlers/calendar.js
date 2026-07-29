@@ -18,8 +18,8 @@ const calendarNotesRouter = require("../routes/calendarNotes.routes.js");
 const pushRouter = require("../routes/push.routes.js");
 
 // Register Routes
-app.use("/api/calendar-notes", authJWT, calendarNotesRouter);
-app.use("/api/push", authJWT, pushRouter);
+app.use(["/api/calendar-notes", "/calendar-notes"], authJWT, calendarNotesRouter);
+app.use(["/api/push", "/push"], authJWT, pushRouter);
 
 registerErrorHandlers(app);
 
