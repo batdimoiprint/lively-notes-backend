@@ -1,5 +1,5 @@
 const connectionsByUserId = new Map();
-const eventHistoryByUserId = new Map();
+const eventHistory = [];
 const MAX_HISTORY = 50;
 
 function getUserConnections(userId) {
@@ -32,7 +32,7 @@ function registerSyncStream(userId, res) {
   const userConnections = getUserConnections(userId);
   userConnections.add(res);
 
-  // Send initial ping
+  // Send periodic ping heartbeat every 15s to keep connection alive
   const heartbeat = setInterval(() => {
     if (!res.writableEnded) {
       res.write(": ping\n\n");
@@ -62,27 +62,22 @@ function broadcastSyncEvent(userId, { domain, action, id }) {
   };
 
   // Record history
-  if (!eventHistoryByUserId.has(userId)) {
-    eventHistoryByUserId.set(userId, []);
-  }
-  const history = eventHistoryByUserId.get(userId);
-  history.push(event);
-  if (history.length > MAX_HISTORY) {
-    history.shift();
+  eventHistory.push(event);
+  if (eventHistory.length > MAX_HISTORY) {
+    eventHistory.shift();
   }
 
-  const userConnections = connectionsByUserId.get(userId);
-  if (!userConnections || userConnections.size === 0) {
-    return false;
-  }
-
-  for (const res of userConnections) {
-    if (!res.writableEnded) {
-      writeSseEvent(res, "sync", event);
+  let broadcastedCount = 0;
+  for (const [, userConnections] of connectionsByUserId.entries()) {
+    for (const res of userConnections) {
+      if (!res.writableEnded) {
+        writeSseEvent(res, "sync", event);
+        broadcastedCount++;
+      }
     }
   }
 
-  return true;
+  return broadcastedCount > 0;
 }
 
 module.exports = {
