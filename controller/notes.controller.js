@@ -58,9 +58,8 @@ async function listNotes(req, res, next) {
 
 async function createNote(req, res, next) {
   try {
-    // console.log(req.body)
     const create = await notesService.createNote(req.body);
-    res.status(201).json({"message":"Success"});
+    res.status(201).json(create);
   } catch (err) {
     next(err);
   }
