@@ -4,6 +4,24 @@ const syncService = require("../service/sync.service");
 
 const router = express.Router();
 
+router.get("/sync-status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
+
+router.get("/sync/status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
+
+router.get("/sync-events", (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
+
+router.get("/sync/events", (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
+
 router.get("/sync/status", (req, res) => {
   res.status(200).json(syncService.getSyncStatus());
 });

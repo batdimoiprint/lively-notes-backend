@@ -44,8 +44,9 @@ app.get("/api/notes/sync-events", authJWT, (req, res) => {
 });
 
 // Register Routes
-app.use(["/api/notes", "/notes"], authJWT, notesRouter);
-app.use(["/api/sections", "/sections"], authJWT, sectionsRouter);
+app.use(authJWT);
+app.use(notesRouter);
+app.use(sectionsRouter);
 
 registerErrorHandlers(app);
 
