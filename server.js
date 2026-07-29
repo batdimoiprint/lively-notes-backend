@@ -22,6 +22,10 @@ const app = express();
 // Global Sync Realtime Interceptor (bypasses Express router matching & Lambda stage quirks)
 const syncService = require("./service/sync.service.js");
 app.use((req, res, next) => {
+  const hasSyncHeader =
+    Object.keys(req.headers || {}).some(k => k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") ||
+    Object.keys(req.apiGateway?.event?.headers || {}).some(k => k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync");
+
   const p = req.path || req.url || "";
   const qStr = JSON.stringify(req.query || {});
   const egQStr = JSON.stringify(req.apiGateway?.event?.queryStringParameters || {});
@@ -29,15 +33,14 @@ app.use((req, res, next) => {
   const multiQ = JSON.stringify(req.apiGateway?.event?.multiValueQueryStringParameters || {});
 
   const isSync =
+    hasSyncHeader ||
     p.includes("sync") ||
     req.url?.includes("sync") ||
     req.originalUrl?.includes("sync") ||
     qStr.includes("sync") ||
     egQStr.includes("sync") ||
     rawQ.includes("sync") ||
-    multiQ.includes("sync") ||
-    req.headers["x-sync"] ||
-    req.headers["X-Sync"];
+    multiQ.includes("sync");
 
   if (isSync) {
     const isEvents =
