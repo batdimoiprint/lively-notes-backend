@@ -1,5 +1,6 @@
 const calendarNotesRepository = require("../repositories/calendarNotes.repository.js");
 const { isValidId } = require("../repositories/repository.util.js");
+const { broadcastSyncEvent } = require("./sync.service.js");
 
 async function getAll() {
   return calendarNotesRepository.getAll();
@@ -11,7 +12,7 @@ async function getByMonth(year, month) {
 }
 
 async function createNote(payload) {
-  return calendarNotesRepository.create({
+  const result = await calendarNotesRepository.create({
     title: payload.title,
     body: payload.body,
     date: payload.date, // "YYYY-MM-DD"
@@ -21,6 +22,8 @@ async function createNote(payload) {
     isWholeDay: !!payload.isWholeDay,
     createdAt: new Date(),
   });
+  broadcastSyncEvent("global_user", { domain: "calendarNotes", action: "create", id: result?._id || result?.insertedId });
+  return result;
 }
 
 async function updateNote(payload) {
@@ -46,14 +49,18 @@ async function updateNote(payload) {
     updateFields.isWholeDay = !!payload.isWholeDay;
   }
 
-  return calendarNotesRepository.update(payload._id, updateFields);
+  const result = await calendarNotesRepository.update(payload._id, updateFields);
+  broadcastSyncEvent("global_user", { domain: "calendarNotes", action: "update", id: payload._id });
+  return result;
 }
 
 async function deleteNote(id) {
   if (!isValidId(id)) {
     return { acknowledged: false, deletedCount: 0 };
   }
-  return calendarNotesRepository.remove(id);
+  const result = await calendarNotesRepository.remove(id);
+  broadcastSyncEvent("global_user", { domain: "calendarNotes", action: "delete", id });
+  return result;
 }
 
 async function getDueReminders() {

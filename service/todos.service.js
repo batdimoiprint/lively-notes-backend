@@ -1,19 +1,24 @@
 const todosRepository = require("../repositories/todos.repository.js");
 const { isValidId } = require("../repositories/repository.util.js");
+const { broadcastSyncEvent } = require("./sync.service.js");
 
 async function getAll() {
   return todosRepository.getAll();
 }
 
 async function createTodo(payload) {
-  return todosRepository.create({ text: payload.text });
+  const result = await todosRepository.create({ text: payload.text });
+  broadcastSyncEvent("global_user", { domain: "todos", action: "create", id: result?._id || result?.insertedId });
+  return result;
 }
 
 async function deleteTodo(id) {
   if (!isValidId(id)) {
     return { acknowledged: false, deletedCount: 0 };
   }
-  return todosRepository.remove(id);
+  const result = await todosRepository.remove(id);
+  broadcastSyncEvent("global_user", { domain: "todos", action: "delete", id });
+  return result;
 }
 
 async function updateTodo(payload) {
@@ -29,7 +34,9 @@ async function updateTodo(payload) {
     updateFields.completed = payload.completed;
   }
 
-  return todosRepository.update(payload._id, updateFields);
+  const result = await todosRepository.update(payload._id, updateFields);
+  broadcastSyncEvent("global_user", { domain: "todos", action: "update", id: payload._id });
+  return result;
 }
 
 module.exports = {

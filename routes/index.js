@@ -53,6 +53,9 @@ const registerRoutes = (app) => {
   const pushRouter = require("./push.routes.js");
   app.use("/api/push", authJWT, pushRouter);
 
+  // Sync Realtime SSE Routes
+  const syncRouter = require("./sync.routes.js");
+  app.use("/api/sync", authJWT, syncRouter);
 };
 
 module.exports = registerRoutes;

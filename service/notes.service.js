@@ -1,5 +1,6 @@
 const notesRepository = require("../repositories/notes.repository.js");
 const { isValidId } = require("../repositories/repository.util.js");
+const { broadcastSyncEvent } = require("./sync.service.js");
 
 async function getAll() {
   return notesRepository.getAll();
@@ -10,7 +11,9 @@ async function getBySection(sectionId) {
 }
 
 async function createNote(payload) {
-  return notesRepository.create(payload);
+  const result = await notesRepository.create(payload);
+  broadcastSyncEvent("global_user", { domain: "notes", action: "create", id: result?._id || result?.insertedId });
+  return result;
 }
 
 async function deleteNote(id) {
@@ -18,7 +21,9 @@ async function deleteNote(id) {
   if (!isValidId(id)) {
     return { acknowledged: false, deletedCount: 0 };
   }
-  return notesRepository.remove(id);
+  const result = await notesRepository.remove(id);
+  broadcastSyncEvent("global_user", { domain: "notes", action: "delete", id });
+  return result;
 }
 
 async function updateNote(payload) {
@@ -38,21 +43,27 @@ async function updateNote(payload) {
       updateFields.sectionId = payload.sectionId;
     }
 
-    return await notesRepository.update(payload._id, updateFields);
+    const result = await notesRepository.update(payload._id, updateFields);
+    broadcastSyncEvent("global_user", { domain: "notes", action: "update", id: payload._id });
+    return result;
   } catch (error) {
     console.log(error);
   }
 }
 
 async function updateOrder(orderedIds) {
-  return notesRepository.updateOrder(orderedIds);
+  const result = await notesRepository.updateOrder(orderedIds);
+  broadcastSyncEvent("global_user", { domain: "notes", action: "reorder" });
+  return result;
 }
 
 async function moveToSection(noteId, sectionId) {
   if (!isValidId(noteId)) {
     return { acknowledged: false, modified: 0 };
   }
-  return notesRepository.update(noteId, { sectionId });
+  const result = await notesRepository.update(noteId, { sectionId });
+  broadcastSyncEvent("global_user", { domain: "notes", action: "update", id: noteId });
+  return result;
 }
 
 module.exports = {
