@@ -2,7 +2,13 @@ const serverless = require("serverless-http");
 const app = require("./server.js");
 const { refreshAllUsers } = require("./service/apifyService.js");
 
-const serverlessHandler = serverless(app);
+const serverlessHandler = serverless(app, {
+  request: (request, event) => {
+    if (event.path) {
+      request.url = event.path;
+    }
+  },
+});
 
 module.exports.handler = async (event, context) => {
   // EventBridge cron trigger
