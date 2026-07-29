@@ -21,15 +21,8 @@ async function listNotes(req, res, next) {
       }
     }
 
-    if (!headerSyncVal) {
-      return res.status(200).json({
-        DEBUG_HEADERS: req.headers,
-        apiGatewayHeaders: req.apiGateway?.event?.headers,
-        origUrl: req.originalUrl,
-        url: req.url,
-        query: req.query
-      });
-    }
+    const origUrl = req.originalUrl || req.url || "";
+    const rawQ = req.apiGateway?.event?.rawQueryString || "";
 
     const isStatus =
       headerSyncVal === "status" ||
