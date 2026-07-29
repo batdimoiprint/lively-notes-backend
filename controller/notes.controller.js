@@ -3,7 +3,9 @@ const syncService = require("../service/sync.service");
 
 async function listNotes(req, res, next) {
   try {
+    const syncHeader = req.headers["x-sync"] || req.headers["sync"];
     const syncParam =
+      syncHeader ||
       req.query?.sync ||
       req.apiGateway?.event?.queryStringParameters?.sync ||
       (req.url && req.url.includes("sync=")
