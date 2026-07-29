@@ -58,6 +58,27 @@ app.use(cookieParser());
 // Express Json
 app.use(express.json());
 
+// Register Sync Realtime Routes directly at app level
+const syncService = require("./service/sync.service.js");
+const { authJWT } = require("./middleware/jwt.config.js");
+
+app.get(
+  ["/api/notes/sync-events", "/notes/sync-events", "/api/sync/events", "/sync/events", "/sync-events"],
+  authJWT,
+  (req, res) => {
+    const userId = req.user?.userId || req.user?.id || "global_user";
+    syncService.registerSyncStream(userId, res);
+  }
+);
+
+app.get(
+  ["/api/notes/sync-status", "/notes/sync-status", "/api/sync/status", "/sync/status", "/sync-status"],
+  authJWT,
+  (req, res) => {
+    res.status(200).json(syncService.getSyncStatus());
+  }
+);
+
 // Register Routes
 registerRoutes(app);
 
