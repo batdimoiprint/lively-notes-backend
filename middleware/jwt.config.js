@@ -5,7 +5,7 @@ const {
   getAccessTokenCookieOptions,
   getRefreshTokenCookieOptions,
 } = require("./cookie.config.js");
-let accessTokenExpiry = process.env.NODE_ENV === "development" ? "7d" : "15m";
+let accessTokenExpiry = "7d";
 
 const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET || "t9S9hHWLz04ezC1n5vcNU1bGpmnY3Ksya9mBd6GHqmMR6SecYfHEW9sec8yUXOa+JMEdnZEJceol1xR3aG5Y+g==";
 const JWT_REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET || "SZ99gNxika5v1kqjTXmfEnbtEXcy4EkQkJMGhSh53nKKVW0hQVegNuKA0epIWPslDGg2v+YAm104hupEFz8TBQ==";
