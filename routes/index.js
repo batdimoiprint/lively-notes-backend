@@ -1,6 +1,25 @@
+const syncService = require("../service/sync.service.js");
 const { authJWT } = require("../middleware/jwt.config.js");
 
 const registerRoutes = (app) => {
+  // Sync Realtime Public Status Route (No Auth required for timestamp polling)
+  app.get(
+    ["/api/notes/sync-status", "/notes/sync-status", "/api/sync/status", "/sync/status", "/sync-status"],
+    (req, res) => {
+      res.status(200).json(syncService.getSyncStatus());
+    }
+  );
+
+  // Sync Realtime Event Stream (Authenticated SSE)
+  app.get(
+    ["/api/notes/sync-events", "/notes/sync-events", "/api/sync/events", "/sync/events", "/sync-events"],
+    authJWT,
+    (req, res) => {
+      const userId = req.user?.userId || req.user?.id || "global_user";
+      syncService.registerSyncStream(userId, res);
+    }
+  );
+
   // Wake Route
   const wakerRouter = require("./waker.routes.js");
   app.use(["/api/wake", "/wake"], wakerRouter);
