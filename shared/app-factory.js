@@ -10,7 +10,7 @@ function createServiceApp() {
   // Enable trust proxy for AWS API Gateway / CloudFront X-Forwarded-For headers
   app.set("trust proxy", 1);
 
-  // Bulletproof Universal CORS for Serverless, Preflight OPTIONS, and Multi-Origin (Wallpaper Engine, Vercel, Local)
+  // Universal CORS for Serverless, Preflight OPTIONS, and Multi-Origin (Wallpaper Engine, Vercel, Local)
   app.use((req, res, next) => {
     // Normalize trailing slashes (e.g., /api/notes/ -> /api/notes)
     if (req.url && req.path && req.path.length > 1 && req.path.endsWith("/")) {
@@ -18,11 +18,13 @@ function createServiceApp() {
       req.url = req.path.slice(0, -1) + query;
     }
 
-    const origin = req.headers.origin || "*";
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Sync, sync, Cookie, x-sync");
+    if (!res.getHeader("Access-Control-Allow-Origin")) {
+      const origin = req.headers.origin || "*";
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Sync, sync, Cookie, x-sync, authorization, content-type");
+    }
 
     if (req.method === "OPTIONS") {
       return res.status(200).end();
