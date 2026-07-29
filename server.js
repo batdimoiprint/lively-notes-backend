@@ -73,7 +73,6 @@ app.get(
 
 app.get(
   ["/api/notes/sync-status", "/notes/sync-status", "/api/sync/status", "/sync/status", "/sync-status"],
-  authJWT,
   (req, res) => {
     res.status(200).json(syncService.getSyncStatus());
   }
