@@ -22,16 +22,36 @@ const app = express();
 // Global Sync Realtime Interceptor (bypasses Express router matching & Lambda stage quirks)
 const syncService = require("./service/sync.service.js");
 app.use((req, res, next) => {
-  const fullUrl = req.originalUrl || req.url || "";
-  const isSyncStatus = fullUrl.includes("sync=status") || fullUrl.includes("sync-status");
-  const isSyncEvents = fullUrl.includes("sync=events") || fullUrl.includes("sync-events");
+  const p = req.path || req.url || "";
+  const qStr = JSON.stringify(req.query || {});
+  const egQStr = JSON.stringify(req.apiGateway?.event?.queryStringParameters || {});
+  const rawQ = req.apiGateway?.event?.rawQueryString || "";
+  const multiQ = JSON.stringify(req.apiGateway?.event?.multiValueQueryStringParameters || {});
 
-  if (isSyncStatus) {
+  const isSync =
+    p.includes("sync") ||
+    req.url?.includes("sync") ||
+    req.originalUrl?.includes("sync") ||
+    qStr.includes("sync") ||
+    egQStr.includes("sync") ||
+    rawQ.includes("sync") ||
+    multiQ.includes("sync") ||
+    req.headers["x-sync"] ||
+    req.headers["X-Sync"];
+
+  if (isSync) {
+    const isEvents =
+      p.includes("events") ||
+      req.url?.includes("events") ||
+      qStr.includes("events") ||
+      egQStr.includes("events");
+
+    if (isEvents) {
+      const userId = req.user?.userId || req.user?.id || "global_user";
+      return syncService.registerSyncStream(userId, res);
+    }
+
     return res.status(200).json(syncService.getSyncStatus());
-  }
-  if (isSyncEvents) {
-    const userId = req.user?.userId || req.user?.id || "global_user";
-    return syncService.registerSyncStream(userId, res);
   }
   next();
 });
