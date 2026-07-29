@@ -48,7 +48,8 @@ function registerErrorHandlers(app) {
 
   // 404 Handler
   app.use((req, res) => {
-    res.status(404).json({ error: "Route not found" });
+    console.log("[404 DEBUG]", { originalUrl: req.originalUrl, url: req.url, path: req.path, baseUrl: req.baseUrl });
+    res.status(404).json({ error: "Route not found", debug: { url: req.url, path: req.path } });
   });
 }
 
