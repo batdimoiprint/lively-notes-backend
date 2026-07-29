@@ -46,7 +46,7 @@ jobs:
       - name: Deploy to Lambda from S3
         run: |
           aws lambda update-function-code \
-            --function-name desktop-notes \
+            --function-name lively-content-fn \
             --s3-bucket desktop-notes-deployments \
             --s3-key function.zip \
             --region ap-southeast-1
