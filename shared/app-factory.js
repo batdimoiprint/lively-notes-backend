@@ -20,7 +20,7 @@ function createServiceApp() {
 
     if (!res.getHeader("Access-Control-Allow-Origin")) {
       const origin = req.headers.origin || "*";
-      const reqHeaders = req.headers["access-control-request-headers"] || "*";
+      const reqHeaders = req.headers["access-control-request-headers"] || "authorization, content-type, x-sync, sync, cookie, x-requested-with, accept, sentry-trace, baggage, cache-control, pragma";
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Access-Control-Allow-Credentials", "true");
       res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
