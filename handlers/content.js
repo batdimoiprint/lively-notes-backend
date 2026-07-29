@@ -37,6 +37,8 @@ app.use((req, res, next) => {
 
 // Register Routes
 app.use(authJWT);
+app.use(["/api/notes", "/notes"], notesRouter);
+app.use(["/api/sections", "/sections"], sectionsRouter);
 app.use(notesRouter);
 app.use(sectionsRouter);
 
