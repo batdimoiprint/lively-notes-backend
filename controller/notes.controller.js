@@ -3,14 +3,20 @@ const syncService = require("../service/sync.service");
 
 async function listNotes(req, res, next) {
   try {
-    const fullUrl = req.originalUrl || req.url || "";
-    const isSyncStatus = req.query?.sync === "status" || fullUrl.includes("sync=status");
-    const isSyncEvents = req.query?.sync === "events" || fullUrl.includes("sync=events");
+    const syncParam =
+      req.query?.sync ||
+      req.apiGateway?.event?.queryStringParameters?.sync ||
+      (req.url && req.url.includes("sync=")
+        ? new URL(req.url, "http://localhost").searchParams.get("sync")
+        : null) ||
+      (req.originalUrl && req.originalUrl.includes("sync=")
+        ? new URL(req.originalUrl, "http://localhost").searchParams.get("sync")
+        : null);
 
-    if (isSyncStatus) {
+    if (syncParam === "status") {
       return res.status(200).json(syncService.getSyncStatus());
     }
-    if (isSyncEvents) {
+    if (syncParam === "events") {
       const userId = req.user?.userId || req.user?.id || "global_user";
       return syncService.registerSyncStream(userId, res);
     }
