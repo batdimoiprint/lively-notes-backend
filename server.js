@@ -19,6 +19,48 @@ const morgan = require('morgan');
 // Define App
 const app = express();
 
+// Global Sync Realtime Interceptor (bypasses Express router matching & Lambda stage quirks)
+const syncService = require("./service/sync.service.js");
+app.use((req, res, next) => {
+  let syncParam = null;
+  const h = req.headers || {};
+  const egH = req.apiGateway?.event?.headers || {};
+  const q = req.query || {};
+  const egQ = req.apiGateway?.event?.queryStringParameters || {};
+  const egMQ = req.apiGateway?.event?.multiValueQueryStringParameters || {};
+
+  for (const k in h) {
+    if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") syncParam = h[k];
+  }
+  for (const k in egH) {
+    if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") syncParam = egH[k];
+  }
+  if (!syncParam) {
+    for (const k in q) {
+      if (k.toLowerCase() === "sync") syncParam = q[k];
+    }
+  }
+  if (!syncParam) {
+    for (const k in egQ) {
+      if (k.toLowerCase() === "sync") syncParam = egQ[k];
+    }
+  }
+  if (!syncParam) {
+    for (const k in egMQ) {
+      if (k.toLowerCase() === "sync") syncParam = egMQ[k]?.[0];
+    }
+  }
+
+  if (syncParam === "status") {
+    return res.status(200).json(syncService.getSyncStatus());
+  }
+  if (syncParam === "events") {
+    const userId = req.user?.userId || req.user?.id || "global_user";
+    return syncService.registerSyncStream(userId, res);
+  }
+  next();
+});
+
 // Helmet
 app.use(helmet())
 
@@ -58,8 +100,6 @@ app.use(cookieParser());
 // Express Json
 app.use(express.json());
 
-// Register Sync Realtime Routes directly at app level
-const syncService = require("./service/sync.service.js");
 const { authJWT } = require("./middleware/jwt.config.js");
 
 app.get("/sync-status", (req, res) => {
