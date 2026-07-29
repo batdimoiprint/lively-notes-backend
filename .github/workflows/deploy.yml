@@ -30,7 +30,8 @@ jobs:
             --exclude "*.git*" \
             --exclude "*.github*" \
             --exclude "*.env.local" \
-            --exclude "function.zip"
+            --exclude "function.zip" \
+            --exclude "vault/*"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
