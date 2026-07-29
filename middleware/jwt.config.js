@@ -7,14 +7,17 @@ const {
 } = require("./cookie.config.js");
 let accessTokenExpiry = process.env.NODE_ENV === "development" ? "7d" : "15m";
 
+const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET || "t9S9hHWLz04ezC1n5vcNU1bGpmnY3Ksya9mBd6GHqmMR6SecYfHEW9sec8yUXOa+JMEdnZEJceol1xR3aG5Y+g==";
+const JWT_REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET || "SZ99gNxika5v1kqjTXmfEnbtEXcy4EkQkJMGhSh53nKKVW0hQVegNuKA0epIWPslDGg2v+YAm104hupEFz8TBQ==";
+
 function generateAccessToken(payload) {
-  return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+  return jwt.sign(payload, JWT_ACCESS_SECRET, {
     expiresIn: accessTokenExpiry,
   });
 }
 
 function generateRefreshToken(payload) {
-  return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+  return jwt.sign(payload, JWT_REFRESH_SECRET, {
     expiresIn: "7d",
   });
 }
@@ -26,7 +29,7 @@ async function authJWT(req, res, next) {
   try {
     const user = await jwt.verify(
       access_token,
-      process.env.ACCESS_TOKEN_SECRET,
+      JWT_ACCESS_SECRET,
     );
 
     req.user = user;
