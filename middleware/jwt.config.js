@@ -23,6 +23,9 @@ function generateRefreshToken(payload) {
 }
 
 async function authJWT(req, res, next) {
+  if (req.method === "OPTIONS") {
+    return next();
+  }
   const authHeader = req.headers.authorization || req.headers.Authorization || "";
   const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
   const access_token = req.cookies?.access_token || bearerToken;

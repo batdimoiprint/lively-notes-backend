@@ -20,9 +20,13 @@ const apifyRouter = require("../routes/apify.routes.js");
 const cloudinaryRouter = require("../routes/cloudinary.routes.js");
 
 // Register Routes
-app.use("/api/igpost", authJWT, igpostRouter);
-app.use("/api/apify", authJWT, apifyRouter);
-app.use("/api/images", authJWT, cloudinaryRouter);
+app.use(["/api/igpost", "/igpost"], authJWT, igpostRouter);
+app.use(["/api/apify", "/apify"], authJWT, apifyRouter);
+app.use(["/api/images", "/images"], authJWT, cloudinaryRouter);
+app.use(authJWT);
+app.use(igpostRouter);
+app.use(apifyRouter);
+app.use(cloudinaryRouter);
 
 registerErrorHandlers(app);
 
