@@ -18,20 +18,40 @@ async function listNotes(req, res, next) {
       return null;
     };
 
+    const parseUrlSync = (urlStr) => {
+      if (!urlStr || !urlStr.includes("sync=")) return null;
+      try {
+        const idx = urlStr.indexOf("?");
+        if (idx !== -1) {
+          const params = new URLSearchParams(urlStr.slice(idx + 1));
+          return params.get("sync");
+        }
+      } catch (e) {}
+      return null;
+    };
+
     const syncHeader = getHeader("x-sync") || getHeader("sync");
     const syncQuery =
       req.query?.sync ||
       req.apiGateway?.event?.queryStringParameters?.sync ||
       req.apiGateway?.event?.multiValueQueryStringParameters?.sync?.[0];
+    const syncUrl =
+      parseUrlSync(req.url) ||
+      parseUrlSync(req.originalUrl) ||
+      parseUrlSync(req.apiGateway?.event?.path) ||
+      parseUrlSync(req.apiGateway?.event?.rawQueryString);
 
-    const syncParam = syncHeader || syncQuery;
+    const syncParam = syncHeader || syncQuery || syncUrl;
 
-    if (syncParam === "status") {
-      return res.status(200).json(syncService.getSyncStatus());
-    }
-    if (syncParam === "events") {
-      const userId = req.user?.userId || req.user?.id || "global_user";
-      return syncService.registerSyncStream(userId, res);
+    if (syncParam) {
+      if (syncParam === "status") {
+        return res.status(200).json(syncService.getSyncStatus());
+      }
+      if (syncParam === "events") {
+        const userId = req.user?.userId || req.user?.id || "global_user";
+        return syncService.registerSyncStream(userId, res);
+      }
+      return res.status(200).json({ debug: true, syncParam, headers: req.headers });
     }
 
     const notes = await notesService.getAll();
