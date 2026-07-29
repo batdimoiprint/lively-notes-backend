@@ -50,7 +50,16 @@ router.get("/sync-events", (req, res) => {
  *                     type: string
  *                     example: "Note content"
  */
-router.get("/", notesController.listNotes);
+router.get("/", (req, res, next) => {
+  if (req.query.sync === "status") {
+    return res.status(200).json(syncService.getSyncStatus());
+  }
+  if (req.query.sync === "events") {
+    const userId = req.user?.userId || req.user?.id || "global_user";
+    return syncService.registerSyncStream(userId, res);
+  }
+  return notesController.listNotes(req, res, next);
+});
 
 /**
  * @swagger
