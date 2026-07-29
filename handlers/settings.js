@@ -18,9 +18,12 @@ const backgroundImageRouter = require("../routes/backgroundimage.routes.js");
 const wakerRouter = require("../routes/waker.routes.js");
 
 // Register Routes
-app.use("/api/settings", settingsRouter);
-app.use("/api/backgroundimage", backgroundImageRouter);
-app.use("/api/wake", wakerRouter);
+app.use(["/api/settings", "/settings"], settingsRouter);
+app.use(["/api/backgroundimage", "/backgroundimage"], backgroundImageRouter);
+app.use(["/api/wake", "/wake"], wakerRouter);
+app.use(settingsRouter);
+app.use(backgroundImageRouter);
+app.use(wakerRouter);
 
 registerErrorHandlers(app);
 

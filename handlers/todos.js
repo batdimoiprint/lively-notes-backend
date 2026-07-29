@@ -18,6 +18,8 @@ const todosRouter = require("../routes/todos.routes.js");
 
 // Register Routes
 app.use(["/api/todos", "/todos"], authJWT, todosRouter);
+app.use(authJWT);
+app.use(todosRouter);
 
 registerErrorHandlers(app);
 

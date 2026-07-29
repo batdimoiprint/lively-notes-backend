@@ -17,8 +17,10 @@ const authRouter = require("../routes/auth.routes.js");
 const soundRouter = require("../routes/sound.routes.js");
 
 // Register Routes
-app.use("/api/auth", authRouter);
-app.use("/api/sound", soundRouter);
+app.use(["/api/auth", "/auth"], authRouter);
+app.use(["/api/sound", "/sound"], soundRouter);
+app.use(authRouter);
+app.use(soundRouter);
 
 registerErrorHandlers(app);
 
