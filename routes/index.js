@@ -30,7 +30,11 @@ const registerRoutes = (app) => {
 
   // Notes Routes
   const notesRouter = require("./notes.routes.js");
-  app.use(["/api/notes", "/notes"], authJWT, notesRouter);
+  app.use(
+    ["/api/notes", "/notes", "/sync-status", "/sync-events", "/sync"],
+    authJWT,
+    notesRouter
+  );
 
   // Cloudinary Images Routes
   const cloudinaryRouter = require("./cloudinary.routes.js");
