@@ -7,6 +7,9 @@ const rateLimit = require("express-rate-limit");
 function createServiceApp() {
   const app = express();
 
+  // Enable trust proxy for AWS API Gateway / CloudFront X-Forwarded-For headers
+  app.set("trust proxy", 1);
+
   // Bulletproof Universal CORS for Serverless, Preflight OPTIONS, and Multi-Origin (Wallpaper Engine, Vercel, Local)
   app.use((req, res, next) => {
     // Normalize trailing slashes (e.g., /api/notes/ -> /api/notes)
@@ -39,6 +42,7 @@ function createServiceApp() {
       max: 200,
       standardHeaders: true,
       legacyHeaders: false,
+      validate: { xForwardedForHeader: false },
       message: { error: "Too many requests. Try again later." }
     });
     app.use(limiter);
