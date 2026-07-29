@@ -1,7 +1,11 @@
 const express = require("express");
 const notesController = require("../controller/notes.controller");
+const syncController = require("../controller/sync.controller");
 
 const router = express.Router();
+
+router.get("/sync/events", syncController.connectSyncStream);
+router.get("/sync/status", syncController.getSyncStatus);
 
 /**
  * @swagger
