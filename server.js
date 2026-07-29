@@ -42,10 +42,14 @@ app.use(
       }
     }
 
-    if (syncH === "status" || req.query?.sync === "status") {
+    const rawUrl = (req.originalUrl || req.url || "") + (req.apiGateway?.event?.rawQueryString || "");
+    const isStatus = syncH === "status" || rawUrl.includes("sync=status") || rawUrl.includes("sync-status");
+    const isEvents = syncH === "events" || rawUrl.includes("sync=events") || rawUrl.includes("sync-events");
+
+    if (isStatus) {
       return res.status(200).json(syncService.getSyncStatus());
     }
-    if (syncH === "events" || req.query?.sync === "events") {
+    if (isEvents) {
       const userId = req.user?.userId || req.user?.id || "global_user";
       return syncService.registerSyncStream(userId, res);
     }
