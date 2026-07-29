@@ -3,55 +3,33 @@ const syncService = require("../service/sync.service");
 
 async function listNotes(req, res, next) {
   try {
-    const getHeader = (name) => {
-      const lower = name.toLowerCase();
-      if (req.headers) {
-        for (const k of Object.keys(req.headers)) {
-          if (k.toLowerCase() === lower) return req.headers[k];
-        }
-      }
-      if (req.apiGateway?.event?.headers) {
-        for (const k of Object.keys(req.apiGateway.event.headers)) {
-          if (k.toLowerCase() === lower) return req.apiGateway.event.headers[k];
-        }
-      }
-      return null;
-    };
+    const origUrl = req.originalUrl || req.url || "";
+    const rawQ = req.apiGateway?.event?.rawQueryString || "";
 
-    const parseUrlSync = (urlStr) => {
-      if (!urlStr || !urlStr.includes("sync=")) return null;
-      try {
-        const idx = urlStr.indexOf("?");
-        if (idx !== -1) {
-          const params = new URLSearchParams(urlStr.slice(idx + 1));
-          return params.get("sync");
-        }
-      } catch (e) {}
-      return null;
-    };
+    const isStatus =
+      req.query?.sync === "status" ||
+      req.apiGateway?.event?.queryStringParameters?.sync === "status" ||
+      req.apiGateway?.event?.multiValueQueryStringParameters?.sync?.[0] === "status" ||
+      req.headers?.["x-sync"] === "status" ||
+      req.headers?.["X-Sync"] === "status" ||
+      origUrl.includes("sync=status") ||
+      rawQ.includes("sync=status");
 
-    const syncHeader = getHeader("x-sync") || getHeader("sync");
-    const syncQuery =
-      req.query?.sync ||
-      req.apiGateway?.event?.queryStringParameters?.sync ||
-      req.apiGateway?.event?.multiValueQueryStringParameters?.sync?.[0];
-    const syncUrl =
-      parseUrlSync(req.url) ||
-      parseUrlSync(req.originalUrl) ||
-      parseUrlSync(req.apiGateway?.event?.path) ||
-      parseUrlSync(req.apiGateway?.event?.rawQueryString);
+    const isEvents =
+      req.query?.sync === "events" ||
+      req.apiGateway?.event?.queryStringParameters?.sync === "events" ||
+      req.apiGateway?.event?.multiValueQueryStringParameters?.sync?.[0] === "events" ||
+      req.headers?.["x-sync"] === "events" ||
+      req.headers?.["X-Sync"] === "events" ||
+      origUrl.includes("sync=events") ||
+      rawQ.includes("sync=events");
 
-    const syncParam = syncHeader || syncQuery || syncUrl;
-
-    if (syncParam) {
-      if (syncParam === "status") {
-        return res.status(200).json(syncService.getSyncStatus());
-      }
-      if (syncParam === "events") {
-        const userId = req.user?.userId || req.user?.id || "global_user";
-        return syncService.registerSyncStream(userId, res);
-      }
-      return res.status(200).json({ debug: true, syncParam, headers: req.headers });
+    if (isStatus) {
+      return res.status(200).json(syncService.getSyncStatus());
+    }
+    if (isEvents) {
+      const userId = req.user?.userId || req.user?.id || "global_user";
+      return syncService.registerSyncStream(userId, res);
     }
 
     const notes = await notesService.getAll();
