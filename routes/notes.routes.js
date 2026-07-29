@@ -51,9 +51,12 @@ router.get("/sync-events", (req, res) => {
  *                     example: "Note content"
  */
 router.get("/", (req, res, next) => {
+  const fullUrl = req.originalUrl || req.url || "";
   const syncParam =
     req.query?.sync ||
-    new URL(req.url, "http://localhost").searchParams.get("sync");
+    (fullUrl.includes("?")
+      ? new URL(fullUrl, "http://localhost").searchParams.get("sync")
+      : null);
 
   if (syncParam === "status") {
     return res.status(200).json(syncService.getSyncStatus());
