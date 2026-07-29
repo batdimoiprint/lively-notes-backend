@@ -51,10 +51,14 @@ router.get("/sync-events", (req, res) => {
  *                     example: "Note content"
  */
 router.get("/", (req, res, next) => {
-  if (req.query.sync === "status") {
+  const syncParam =
+    req.query?.sync ||
+    new URL(req.url, "http://localhost").searchParams.get("sync");
+
+  if (syncParam === "status") {
     return res.status(200).json(syncService.getSyncStatus());
   }
-  if (req.query.sync === "events") {
+  if (syncParam === "events") {
     const userId = req.user?.userId || req.user?.id || "global_user";
     return syncService.registerSyncStream(userId, res);
   }
