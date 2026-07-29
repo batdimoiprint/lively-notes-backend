@@ -20,13 +20,14 @@ const sectionsRouter = require("../routes/sections.routes.js");
 const syncService = require("../service/sync.service");
 
 // Global Sync Realtime Interceptor (bypasses express router matching quirks)
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   const fullUrl = req.originalUrl || req.url || "";
   const isSyncStatus = fullUrl.includes("sync=status") || fullUrl.includes("sync-status");
   const isSyncEvents = fullUrl.includes("sync=events") || fullUrl.includes("sync-events");
 
   if (isSyncStatus) {
-    return res.status(200).json(syncService.getSyncStatus());
+    const status = await syncService.getSyncStatus();
+    return res.status(200).json(status);
   }
   if (isSyncEvents) {
     const userId = req.user?.userId || req.user?.id || "global_user";

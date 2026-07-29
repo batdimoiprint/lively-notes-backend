@@ -1,8 +1,10 @@
+const client = require("../db/db.js");
+const myDB = client.db("livelydesktopnotes");
+const syncCollection = myDB.collection("sync_state");
+
 const connectionsByUserId = new Map();
-const eventHistory = [];
-const MAX_HISTORY = 50;
-let lastEventTimestamp = Date.now();
-let lastEvent = null;
+let memoryLastEventTimestamp = Date.now();
+let memoryLastEvent = null;
 
 function getUserConnections(userId) {
   if (!connectionsByUserId.has(userId)) {
@@ -34,7 +36,6 @@ function registerSyncStream(userId, res) {
   const userConnections = getUserConnections(userId);
   userConnections.add(res);
 
-  // Send periodic ping heartbeat every 15s to prevent cloud idle timeouts
   const heartbeat = setInterval(() => {
     if (!res.writableEnded) {
       res.write(": ping\n\n");
@@ -64,14 +65,15 @@ function broadcastSyncEvent(userId, { domain, action, id }) {
     timestamp: now,
   };
 
-  lastEventTimestamp = now;
-  lastEvent = event;
+  memoryLastEventTimestamp = now;
+  memoryLastEvent = event;
 
-  // Record history
-  eventHistory.push(event);
-  if (eventHistory.length > MAX_HISTORY) {
-    eventHistory.shift();
-  }
+  // Persist to MongoDB asynchronously for cross-Lambda container sync
+  syncCollection.updateOne(
+    { _id: "global_sync_state" },
+    { $set: { lastEventTimestamp: now, lastEvent: event } },
+    { upsert: true }
+  ).catch(err => console.error("Failed to persist sync state to MongoDB:", err));
 
   let broadcastedCount = 0;
   for (const [, userConnections] of connectionsByUserId.entries()) {
@@ -86,10 +88,21 @@ function broadcastSyncEvent(userId, { domain, action, id }) {
   return broadcastedCount > 0;
 }
 
-function getSyncStatus() {
+async function getSyncStatus() {
+  try {
+    const doc = await syncCollection.findOne({ _id: "global_sync_state" });
+    if (doc && doc.lastEventTimestamp) {
+      return {
+        lastEventTimestamp: Math.max(memoryLastEventTimestamp, doc.lastEventTimestamp),
+        lastEvent: doc.lastEvent || memoryLastEvent,
+      };
+    }
+  } catch (err) {
+    // Fallback to in-memory status
+  }
   return {
-    lastEventTimestamp,
-    lastEvent,
+    lastEventTimestamp: memoryLastEventTimestamp,
+    lastEvent: memoryLastEvent,
   };
 }
 
