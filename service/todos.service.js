@@ -8,7 +8,7 @@ async function getAll() {
 
 async function createTodo(payload) {
   const result = await todosRepository.create({ text: payload.text });
-  broadcastSyncEvent("global_user", { domain: "todos", action: "create", id: result?._id || result?.insertedId });
+  await broadcastSyncEvent("global_user", { domain: "todos", action: "create", id: result?._id || result?.insertedId });
   return result;
 }
 
@@ -17,7 +17,7 @@ async function deleteTodo(id) {
     return { acknowledged: false, deletedCount: 0 };
   }
   const result = await todosRepository.remove(id);
-  broadcastSyncEvent("global_user", { domain: "todos", action: "delete", id });
+  await broadcastSyncEvent("global_user", { domain: "todos", action: "delete", id });
   return result;
 }
 
@@ -35,7 +35,7 @@ async function updateTodo(payload) {
   }
 
   const result = await todosRepository.update(payload._id, updateFields);
-  broadcastSyncEvent("global_user", { domain: "todos", action: "update", id: payload._id });
+  await broadcastSyncEvent("global_user", { domain: "todos", action: "update", id: payload._id });
   return result;
 }
 

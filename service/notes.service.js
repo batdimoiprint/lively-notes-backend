@@ -13,8 +13,8 @@ async function getBySection(sectionId) {
 async function createNote(payload) {
   const result = await notesRepository.create(payload);
   const id = result?._id || result?.insertedId || result?.id;
-  broadcastSyncEvent("global_user", { domain: "notes", action: "create", id });
-  broadcastSyncEvent("global_user", { domain: "sections", action: "update" });
+  await broadcastSyncEvent("global_user", { domain: "notes", action: "create", id });
+  await broadcastSyncEvent("global_user", { domain: "sections", action: "update" });
   return result;
 }
 
@@ -24,8 +24,8 @@ async function deleteNote(id) {
     return { acknowledged: false, deletedCount: 0 };
   }
   const result = await notesRepository.remove(id);
-  broadcastSyncEvent("global_user", { domain: "notes", action: "delete", id });
-  broadcastSyncEvent("global_user", { domain: "sections", action: "update" });
+  await broadcastSyncEvent("global_user", { domain: "notes", action: "delete", id });
+  await broadcastSyncEvent("global_user", { domain: "sections", action: "update" });
   return result;
 }
 
@@ -47,9 +47,9 @@ async function updateNote(payload) {
     }
 
     const result = await notesRepository.update(payload._id, updateFields);
-    broadcastSyncEvent("global_user", { domain: "notes", action: "update", id: payload._id });
+    await broadcastSyncEvent("global_user", { domain: "notes", action: "update", id: payload._id });
     if (payload.sectionId !== undefined) {
-      broadcastSyncEvent("global_user", { domain: "sections", action: "update" });
+      await broadcastSyncEvent("global_user", { domain: "sections", action: "update" });
     }
     return result;
   } catch (error) {
@@ -59,7 +59,7 @@ async function updateNote(payload) {
 
 async function updateOrder(orderedIds) {
   const result = await notesRepository.updateOrder(orderedIds);
-  broadcastSyncEvent("global_user", { domain: "notes", action: "reorder" });
+  await broadcastSyncEvent("global_user", { domain: "notes", action: "reorder" });
   return result;
 }
 
@@ -68,8 +68,8 @@ async function moveToSection(noteId, sectionId) {
     return { acknowledged: false, modified: 0 };
   }
   const result = await notesRepository.update(noteId, { sectionId });
-  broadcastSyncEvent("global_user", { domain: "notes", action: "update", id: noteId });
-  broadcastSyncEvent("global_user", { domain: "sections", action: "update" });
+  await broadcastSyncEvent("global_user", { domain: "notes", action: "update", id: noteId });
+  await broadcastSyncEvent("global_user", { domain: "sections", action: "update" });
   return result;
 }
 

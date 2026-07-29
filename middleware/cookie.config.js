@@ -1,8 +1,6 @@
 const isDev = process.env.NODE_ENV === "development";
 
-const accessTokenCookieMaxAge = isDev
-  ? 7 * 24 * 60 * 60 * 1000 // 7 days
-  : 15 * 60 * 1000;         // 15 minutes
+const accessTokenCookieMaxAge = 7 * 24 * 60 * 60 * 1000; // 7 days (matches JWT expiry)
 
 const refreshTokenCookieMaxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
 

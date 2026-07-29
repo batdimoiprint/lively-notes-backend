@@ -22,7 +22,7 @@ async function createNote(payload) {
     isWholeDay: !!payload.isWholeDay,
     createdAt: new Date(),
   });
-  broadcastSyncEvent("global_user", { domain: "calendarNotes", action: "create", id: result?._id || result?.insertedId });
+  await broadcastSyncEvent("global_user", { domain: "calendarNotes", action: "create", id: result?._id || result?.insertedId });
   return result;
 }
 
@@ -50,7 +50,7 @@ async function updateNote(payload) {
   }
 
   const result = await calendarNotesRepository.update(payload._id, updateFields);
-  broadcastSyncEvent("global_user", { domain: "calendarNotes", action: "update", id: payload._id });
+  await broadcastSyncEvent("global_user", { domain: "calendarNotes", action: "update", id: payload._id });
   return result;
 }
 
@@ -59,7 +59,7 @@ async function deleteNote(id) {
     return { acknowledged: false, deletedCount: 0 };
   }
   const result = await calendarNotesRepository.remove(id);
-  broadcastSyncEvent("global_user", { domain: "calendarNotes", action: "delete", id });
+  await broadcastSyncEvent("global_user", { domain: "calendarNotes", action: "delete", id });
   return result;
 }
 

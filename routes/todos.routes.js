@@ -4,8 +4,9 @@ const syncService = require("../service/sync.service");
 
 const router = express.Router();
 
-router.get("/sync-status", (req, res) => {
-  res.status(200).json(syncService.getSyncStatus());
+router.get("/sync-status", async (req, res) => {
+  const status = await syncService.getSyncStatus();
+  res.status(200).json(status);
 });
 
 router.get("/sync-events", (req, res) => {

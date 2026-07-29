@@ -56,7 +56,7 @@ function registerSyncStream(userId, res) {
   return cleanup;
 }
 
-function broadcastSyncEvent(userId, { domain, action, id }) {
+async function broadcastSyncEvent(userId, { domain, action, id }) {
   const now = Date.now();
   const event = {
     domain,
@@ -68,12 +68,16 @@ function broadcastSyncEvent(userId, { domain, action, id }) {
   memoryLastEventTimestamp = now;
   memoryLastEvent = event;
 
-  // Persist to MongoDB asynchronously for cross-Lambda container sync
-  syncCollection.updateOne(
-    { _id: "global_sync_state" },
-    { $set: { lastEventTimestamp: now, lastEvent: event } },
-    { upsert: true }
-  ).catch(err => console.error("Failed to persist sync state to MongoDB:", err));
+  // Persist to MongoDB synchronously before Lambda freezes event loop
+  try {
+    await syncCollection.updateOne(
+      { _id: "global_sync_state" },
+      { $set: { lastEventTimestamp: now, lastEvent: event } },
+      { upsert: true }
+    );
+  } catch (err) {
+    console.error("Failed to persist sync state to MongoDB:", err);
+  }
 
   let broadcastedCount = 0;
   for (const [, userConnections] of connectionsByUserId.entries()) {

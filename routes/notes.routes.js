@@ -6,8 +6,9 @@ const router = express.Router();
 
 router.get(
   ["/sync-status", "/sync/status", "/api/notes/sync-status", "/notes/sync-status"],
-  (req, res) => {
-    res.status(200).json(syncService.getSyncStatus());
+  async (req, res) => {
+    const status = await syncService.getSyncStatus();
+    res.status(200).json(status);
   }
 );
 
