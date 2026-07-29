@@ -28,7 +28,8 @@ async function authJWT(req, res, next) {
   }
   const authHeader = req.headers.authorization || req.headers.Authorization || "";
   const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
-  const access_token = req.cookies?.access_token || bearerToken;
+  const queryToken = req.query?.token ? String(req.query.token) : "";
+  const access_token = req.cookies?.access_token || bearerToken || queryToken;
   if (!access_token)
     return res.status(403).json({ message: "No Access Token" });
   try {
