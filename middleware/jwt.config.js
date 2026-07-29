@@ -23,7 +23,9 @@ function generateRefreshToken(payload) {
 }
 
 async function authJWT(req, res, next) {
-  const access_token = req.cookies.access_token;
+  const authHeader = req.headers.authorization || req.headers.Authorization || "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+  const access_token = req.cookies?.access_token || bearerToken;
   if (!access_token)
     return res.status(403).json({ message: "No Access Token" });
   try {
