@@ -21,43 +21,37 @@ const app = express();
 
 // Global Sync Realtime Interceptor (bypasses Express router matching & Lambda stage quirks)
 const syncService = require("./service/sync.service.js");
-app.use((req, res, next) => {
-  const hasSyncHeader =
-    Object.keys(req.headers || {}).some(k => k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") ||
-    Object.keys(req.apiGateway?.event?.headers || {}).some(k => k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync");
+app.use(
+  ["/api/notes", "/notes", "/api/todos", "/todos", "/api/sections", "/sections", "/"],
+  (req, res, next) => {
+    let syncH = null;
+    if (req.headers) {
+      for (const k of Object.keys(req.headers)) {
+        if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") {
+          syncH = req.headers[k];
+          break;
+        }
+      }
+    }
+    if (!syncH && req.apiGateway?.event?.headers) {
+      for (const k of Object.keys(req.apiGateway.event.headers)) {
+        if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") {
+          syncH = req.apiGateway.event.headers[k];
+          break;
+        }
+      }
+    }
 
-  const p = req.path || req.url || "";
-  const qStr = JSON.stringify(req.query || {});
-  const egQStr = JSON.stringify(req.apiGateway?.event?.queryStringParameters || {});
-  const rawQ = req.apiGateway?.event?.rawQueryString || "";
-  const multiQ = JSON.stringify(req.apiGateway?.event?.multiValueQueryStringParameters || {});
-
-  const isSync =
-    hasSyncHeader ||
-    p.includes("sync") ||
-    req.url?.includes("sync") ||
-    req.originalUrl?.includes("sync") ||
-    qStr.includes("sync") ||
-    egQStr.includes("sync") ||
-    rawQ.includes("sync") ||
-    multiQ.includes("sync");
-
-  if (isSync) {
-    const isEvents =
-      p.includes("events") ||
-      req.url?.includes("events") ||
-      qStr.includes("events") ||
-      egQStr.includes("events");
-
-    if (isEvents) {
+    if (syncH === "status" || req.query?.sync === "status") {
+      return res.status(200).json(syncService.getSyncStatus());
+    }
+    if (syncH === "events" || req.query?.sync === "events") {
       const userId = req.user?.userId || req.user?.id || "global_user";
       return syncService.registerSyncStream(userId, res);
     }
-
-    return res.status(200).json(syncService.getSyncStatus());
+    next();
   }
-  next();
-});
+);
 
 // Helmet
 app.use(helmet())
