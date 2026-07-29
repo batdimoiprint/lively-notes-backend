@@ -1,11 +1,17 @@
 const express = require("express");
 const notesController = require("../controller/notes.controller");
-const syncController = require("../controller/sync.controller");
+const syncService = require("../service/sync.service");
 
 const router = express.Router();
 
-router.get("/sync/events", syncController.connectSyncStream);
-router.get("/sync/status", syncController.getSyncStatus);
+router.get(["/sync/events", "/sync-events"], (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
+
+router.get(["/sync/status", "/sync-status"], (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
 
 /**
  * @swagger
