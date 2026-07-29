@@ -21,7 +21,11 @@ function createServiceApp() {
     next();
   });
 
-  app.use(helmet({ crossOriginResourcePolicy: false }));
+  app.use(helmet({
+    crossOriginResourcePolicy: false,
+    crossOriginOpenerPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }));
 
   if (process.env.NODE_ENV !== "development") {
     const limiter = rateLimit({
