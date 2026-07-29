@@ -3,17 +3,28 @@ const syncService = require("../service/sync.service");
 
 async function listNotes(req, res, next) {
   try {
-    const syncHeader = req.headers["x-sync"] || req.headers["sync"];
-    const syncParam =
-      syncHeader ||
+    const getHeader = (name) => {
+      const lower = name.toLowerCase();
+      if (req.headers) {
+        for (const k of Object.keys(req.headers)) {
+          if (k.toLowerCase() === lower) return req.headers[k];
+        }
+      }
+      if (req.apiGateway?.event?.headers) {
+        for (const k of Object.keys(req.apiGateway.event.headers)) {
+          if (k.toLowerCase() === lower) return req.apiGateway.event.headers[k];
+        }
+      }
+      return null;
+    };
+
+    const syncHeader = getHeader("x-sync") || getHeader("sync");
+    const syncQuery =
       req.query?.sync ||
       req.apiGateway?.event?.queryStringParameters?.sync ||
-      (req.url && req.url.includes("sync=")
-        ? new URL(req.url, "http://localhost").searchParams.get("sync")
-        : null) ||
-      (req.originalUrl && req.originalUrl.includes("sync=")
-        ? new URL(req.originalUrl, "http://localhost").searchParams.get("sync")
-        : null);
+      req.apiGateway?.event?.multiValueQueryStringParameters?.sync?.[0];
+
+    const syncParam = syncHeader || syncQuery;
 
     if (syncParam === "status") {
       return res.status(200).json(syncService.getSyncStatus());
