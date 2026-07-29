@@ -21,16 +21,34 @@ const syncService = require("../service/sync.service");
 
 // Global Sync Realtime Interceptor (bypasses express router matching quirks)
 app.use((req, res, next) => {
-  const syncHeader =
-    req.headers["x-sync"] ||
-    req.headers["sync"] ||
-    req.apiGateway?.event?.headers?.["x-sync"] ||
-    req.apiGateway?.event?.headers?.["X-Sync"];
-  const syncQuery =
-    req.query?.sync ||
-    req.apiGateway?.event?.queryStringParameters?.sync ||
-    req.apiGateway?.event?.multiValueQueryStringParameters?.sync?.[0];
-  const syncParam = syncHeader || syncQuery;
+  let syncParam = null;
+  const h = req.headers || {};
+  const egH = req.apiGateway?.event?.headers || {};
+  const q = req.query || {};
+  const egQ = req.apiGateway?.event?.queryStringParameters || {};
+  const egMQ = req.apiGateway?.event?.multiValueQueryStringParameters || {};
+
+  for (const k in h) {
+    if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") syncParam = h[k];
+  }
+  for (const k in egH) {
+    if (k.toLowerCase() === "x-sync" || k.toLowerCase() === "sync") syncParam = egH[k];
+  }
+  if (!syncParam) {
+    for (const k in q) {
+      if (k.toLowerCase() === "sync") syncParam = q[k];
+    }
+  }
+  if (!syncParam) {
+    for (const k in egQ) {
+      if (k.toLowerCase() === "sync") syncParam = egQ[k];
+    }
+  }
+  if (!syncParam) {
+    for (const k in egMQ) {
+      if (k.toLowerCase() === "sync") syncParam = egMQ[k]?.[0];
+    }
+  }
 
   if (syncParam === "status") {
     return res.status(200).json(syncService.getSyncStatus());
