@@ -1,7 +1,20 @@
 const notesService = require("../service/notes.service");
+const syncService = require("../service/sync.service");
 
 async function listNotes(req, res, next) {
   try {
+    const fullUrl = req.originalUrl || req.url || "";
+    const isSyncStatus = req.query?.sync === "status" || fullUrl.includes("sync=status");
+    const isSyncEvents = req.query?.sync === "events" || fullUrl.includes("sync=events");
+
+    if (isSyncStatus) {
+      return res.status(200).json(syncService.getSyncStatus());
+    }
+    if (isSyncEvents) {
+      const userId = req.user?.userId || req.user?.id || "global_user";
+      return syncService.registerSyncStream(userId, res);
+    }
+
     const notes = await notesService.getAll();
     // console.log(notes)
     res.status(200).json(notes);
