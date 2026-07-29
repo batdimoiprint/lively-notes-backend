@@ -52,19 +52,23 @@ router.get("/sync-events", (req, res) => {
  */
 router.get("/", (req, res, next) => {
   const fullUrl = req.originalUrl || req.url || "";
-  const syncParam =
-    req.query?.sync ||
-    (fullUrl.includes("?")
-      ? new URL(fullUrl, "http://localhost").searchParams.get("sync")
-      : null);
+  let syncParam = req.query?.sync;
+  if (!syncParam && fullUrl.includes("?")) {
+    try {
+      syncParam = new URL(fullUrl, "http://localhost").searchParams.get("sync");
+    } catch (e) {}
+  }
 
-  if (syncParam === "status") {
-    return res.status(200).json(syncService.getSyncStatus());
+  if (syncParam) {
+    if (syncParam === "status") {
+      return res.status(200).json(syncService.getSyncStatus());
+    }
+    if (syncParam === "events") {
+      const userId = req.user?.userId || req.user?.id || "global_user";
+      return syncService.registerSyncStream(userId, res);
+    }
   }
-  if (syncParam === "events") {
-    const userId = req.user?.userId || req.user?.id || "global_user";
-    return syncService.registerSyncStream(userId, res);
-  }
+
   return notesController.listNotes(req, res, next);
 });
 
