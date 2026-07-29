@@ -62,45 +62,42 @@ app.use(express.json());
 const syncService = require("./service/sync.service.js");
 const { authJWT } = require("./middleware/jwt.config.js");
 
-app.get(
-  [
-    "/api/notes/sync-events",
-    "/notes/sync-events",
-    "/api/todos/sync-events",
-    "/todos/sync-events",
-    "/api/sections/sync-events",
-    "/sections/sync-events",
-    "/api/calendar-notes/sync-events",
-    "/calendar-notes/sync-events",
-    "/api/sync/events",
-    "/sync/events",
-    "/sync-events",
-  ],
-  authJWT,
-  (req, res) => {
-    const userId = req.user?.userId || req.user?.id || "global_user";
-    syncService.registerSyncStream(userId, res);
-  }
-);
+app.get("/sync-status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
+app.get("/notes/sync-status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
+app.get("/api/notes/sync-status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
+app.get("/todos/sync-status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
+app.get("/api/todos/sync-status", (req, res) => {
+  res.status(200).json(syncService.getSyncStatus());
+});
 
-app.get(
-  [
-    "/api/notes/sync-status",
-    "/notes/sync-status",
-    "/api/todos/sync-status",
-    "/todos/sync-status",
-    "/api/sections/sync-status",
-    "/sections/sync-status",
-    "/api/calendar-notes/sync-status",
-    "/calendar-notes/sync-status",
-    "/api/sync/status",
-    "/sync/status",
-    "/sync-status",
-  ],
-  (req, res) => {
-    res.status(200).json(syncService.getSyncStatus());
-  }
-);
+app.get("/sync-events", authJWT, (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
+app.get("/notes/sync-events", authJWT, (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
+app.get("/api/notes/sync-events", authJWT, (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
+app.get("/todos/sync-events", authJWT, (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
+app.get("/api/todos/sync-events", authJWT, (req, res) => {
+  const userId = req.user?.userId || req.user?.id || "global_user";
+  syncService.registerSyncStream(userId, res);
+});
 
 // Register Routes
 registerRoutes(app);
