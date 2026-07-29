@@ -21,17 +21,19 @@ const syncService = require("../service/sync.service");
 
 // Global Sync Realtime Interceptor (bypasses express router matching quirks)
 app.use((req, res, next) => {
-  const syncHeader = req.headers["x-sync"] || req.headers["sync"];
-  const syncQuery = req.query?.sync;
-  const urlSync = req.url && req.url.includes("sync=status") ? "status" : (req.url && req.url.includes("sync=events") ? "events" : null);
-  const syncParam = syncHeader || syncQuery || urlSync;
-
-  if (syncParam === "status") {
-    return res.status(200).json(syncService.getSyncStatus());
-  }
-  if (syncParam === "events") {
-    const userId = req.user?.userId || req.user?.id || "global_user";
-    return syncService.registerSyncStream(userId, res);
+  if (req.url && req.url.includes("sync")) {
+    return res.status(200).json({
+      debug: true,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      query: req.query,
+      headers: req.headers,
+      apiGateway: req.apiGateway ? {
+        path: req.apiGateway.event?.path,
+        queryStringParameters: req.apiGateway.event?.queryStringParameters,
+        rawQueryString: req.apiGateway.event?.rawQueryString
+      } : null
+    });
   }
   next();
 });
