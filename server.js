@@ -130,8 +130,13 @@ app.use((err, req, res, next) => {
 
 // 404 Handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' })
-})
+  res.status(404).json({
+    error: 'Route not found',
+    reqPath: req.path,
+    reqUrl: req.url,
+    reqOriginalUrl: req.originalUrl
+  });
+});
 
 
 // Ports
