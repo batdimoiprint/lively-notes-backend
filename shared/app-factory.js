@@ -9,6 +9,12 @@ function createServiceApp() {
 
   // Bulletproof Universal CORS for Serverless, Preflight OPTIONS, and Multi-Origin (Wallpaper Engine, Vercel, Local)
   app.use((req, res, next) => {
+    // Normalize trailing slashes (e.g., /api/notes/ -> /api/notes)
+    if (req.url && req.path && req.path.length > 1 && req.path.endsWith("/")) {
+      const query = req.url.slice(req.path.length);
+      req.url = req.path.slice(0, -1) + query;
+    }
+
     const origin = req.headers.origin || "*";
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
