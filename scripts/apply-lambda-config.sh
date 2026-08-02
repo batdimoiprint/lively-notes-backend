@@ -10,6 +10,17 @@
 # AWS_REGION is NOT set on the Lambda — it's a reserved variable that AWS
 # populates automatically with the function's own region (ap-southeast-1).
 #
+# SCOPE: this script only targets the retired monolith (desktop-notes). The six
+# split functions .github/workflows/deploy.yml actually deploys each carry their
+# own role (lively-content-role, lively-auth-role, …), and those inline DynamoDB
+# policies are maintained by hand with the AWS CLI — nothing here writes them.
+# Each is scoped to just the tables its domains used when the role was created,
+# so mounting a new domain's router on an existing split function takes TWO
+# steps: register the router in handlers/*.js, AND add that domain's table ARN
+# to the function's role. Skip the second and the route trades its 404 for a
+# 500 AccessDenied on the first read — how job-applications broke on
+# lively-content-fn.
+#
 # Usage: bash scripts/apply-lambda-config.sh [mongo|dynamo]
 #   The argument sets READ_SOURCE (default mongo). Flip to dynamo only after
 #   the dual-write deploy has soaked and scripts/reconcile-dynamo.js passes.
