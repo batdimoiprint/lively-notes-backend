@@ -19,6 +19,11 @@ const morgan = require('morgan');
 // Define App
 const app = express();
 
+// CORS (must be mounted before all custom interceptors & routes)
+const cors = require("cors");
+const options = require("./config/cors.config.js");
+app.use(cors(options));
+
 // Global Sync Realtime Interceptor (bypasses Express router matching & Lambda stage quirks)
 const syncService = require("./service/sync.service.js");
 app.use((req, res, next) => {
@@ -80,11 +85,6 @@ if (process.env.NODE_ENV == "development") {
   app.use(morgan('combined'))
 }
 
-
-// CORS
-const cors = require("cors");
-const options = require("./config/cors.config.js");
-app.use(cors(options));
 
 // Cookies Parser
 const cookieParser = require("cookie-parser");

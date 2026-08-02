@@ -5,7 +5,20 @@ const options = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Sync", "sync", "Cookie", "x-sync"]
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Sync",
+    "sync",
+    "x-sync",
+    "Cookie",
+    "Cache-Control",
+    "cache-control",
+    "Pragma",
+    "pragma",
+    "Expires",
+    "expires"
+  ]
 };
 
 module.exports = options;
