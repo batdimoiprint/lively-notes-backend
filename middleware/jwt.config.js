@@ -46,6 +46,25 @@ async function authJWT(req, res, next) {
   }
 }
 
+async function optionalAuthJWT(req, res, next) {
+  if (req.method === "OPTIONS") {
+    return next();
+  }
+  const authHeader = req.headers.authorization || req.headers.Authorization || "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+  const queryToken = req.query?.token ? String(req.query.token) : "";
+  const access_token = req.cookies?.access_token || bearerToken || queryToken;
+  if (access_token) {
+    try {
+      const user = await jwt.verify(access_token, JWT_ACCESS_SECRET);
+      req.user = user;
+    } catch (error) {
+      // Ignore invalid token in optional auth
+    }
+  }
+  next();
+}
+
 async function refreshJWT(req, res) {
   const refresh_token = req.cookies.refresh_token;
 
@@ -91,6 +110,7 @@ function getTokenMaxAges() {
 
 module.exports = {
   authJWT,
+  optionalAuthJWT,
   refreshJWT,
   removeCookie,
   generateAccessToken,

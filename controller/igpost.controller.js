@@ -42,11 +42,13 @@ async function returnOneRandomPost(req, res) {
 async function getIdolPosts(req, res) {
     try {
         const userId = req.user?.userId;
-        if (!isValidId(userId)) {
-            return res.status(400).json({ message: "Invalid user" });
+        let user;
+        if (isValidId(userId)) {
+            user = await userRepository.getById(userId);
         }
-
-        const user = await userRepository.getById(userId);
+        if (!user) {
+            user = await userRepository.getFirstUser();
+        }
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -86,11 +88,13 @@ async function getIdolPosts(req, res) {
 async function getNewestIdolPosts(req, res) {
     try {
         const userId = req.user?.userId;
-        if (!isValidId(userId)) {
-            return res.status(400).json({ message: "Invalid user" });
+        let user;
+        if (isValidId(userId)) {
+            user = await userRepository.getById(userId);
         }
-
-        const user = await userRepository.getById(userId);
+        if (!user) {
+            user = await userRepository.getFirstUser();
+        }
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }

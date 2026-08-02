@@ -1,11 +1,11 @@
-// Imports
+const path = require("path");
 const envFile =
   process.env.NODE_ENV === "production"
     ? ".env"
     : process.env.NODE_ENV === "staging"
       ? ".env.staging"
       : ".env.local";
-require("dotenv").config({ path: envFile });
+require("dotenv").config({ path: path.resolve(__dirname, envFile) });
 const express = require("express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");

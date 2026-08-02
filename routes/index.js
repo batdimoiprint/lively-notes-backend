@@ -1,5 +1,5 @@
 const syncService = require("../service/sync.service.js");
-const { authJWT } = require("../middleware/jwt.config.js");
+const { authJWT, optionalAuthJWT } = require("../middleware/jwt.config.js");
 
 const registerRoutes = (app) => {
   // Sync Realtime Public Status Route (No Auth required for timestamp polling)
@@ -54,7 +54,7 @@ const registerRoutes = (app) => {
 
   // IGPosts Routes
   const igpostRouter = require("./igpost.routes.js");
-  app.use(["/api/igpost", "/igpost"], authJWT, igpostRouter);
+  app.use(["/api/igpost", "/igpost"], optionalAuthJWT, igpostRouter);
 
   // Pomodoro Sound Routes
   const soundRouter = require("./sound.routes.js");
