@@ -16,6 +16,7 @@ const app = createServiceApp();
 // Import Routes
 const notesRouter = require("../routes/notes.routes.js");
 const sectionsRouter = require("../routes/sections.routes.js");
+const jobApplicationsRouter = require("../routes/jobApplications.routes.js");
 
 const syncService = require("../service/sync.service");
 
@@ -40,6 +41,7 @@ app.use(async (req, res, next) => {
 app.use(authJWT);
 app.use(["/api/notes", "/notes"], notesRouter);
 app.use(["/api/sections", "/sections"], sectionsRouter);
+app.use(["/api/job-applications", "/job-applications"], jobApplicationsRouter);
 app.use(notesRouter);
 app.use(sectionsRouter);
 
