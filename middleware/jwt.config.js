@@ -56,7 +56,7 @@ async function refreshJWT(req, res) {
   try {
     const user = await jwt.verify(
       refresh_token,
-      process.env.REFRESH_TOKEN_SECRET,
+      JWT_REFRESH_SECRET,
     );
     // Refresh Access Token
     const newAccessToken = generateAccessToken({ userId: user.userId });
