@@ -24,6 +24,7 @@ const notesRepo = require("../repositories/notes.repository.js");
 const sectionsRepo = require("../repositories/sections.repository.js");
 const todosRepo = require("../repositories/todos.repository.js");
 const calendarRepo = require("../repositories/calendarNotes.repository.js");
+const jobApplicationsRepo = require("../repositories/jobApplications.repository.js");
 const settingsRepo = require("../repositories/settings.repository.js");
 const pushRepo = require("../repositories/pushSubscriptions.repository.js");
 const igPostsRepo = require("../repositories/igPosts.repository.js");
@@ -84,6 +85,17 @@ const normalizers = {
     reminderInterval: d.reminderInterval || "once",
     reminderSent: !!d.reminderSent,
     isWholeDay: !!d.isWholeDay,
+  }),
+  jobApplications: (d) => ({
+    _id: String(d._id),
+    company: d.company,
+    position: d.position,
+    dateApplied: d.dateApplied,
+    status: d.status || "applied",
+    link: d.link ?? undefined,
+    reference: d.reference ?? undefined,
+    notes: d.notes ?? undefined,
+    stages: Array.isArray(d.stages) ? d.stages : [],
   }),
   settings: (d) => {
     const { _id, ...rest } = d;
@@ -247,6 +259,11 @@ async function lifecycleCheck() {
     "calendarNotes.getAll",
     () => calendarRepo.getAll(),
     normalizers.calendarNotes
+  );
+  await compareRead(
+    "jobApplications.getAll",
+    () => jobApplicationsRepo.getAll(),
+    normalizers.jobApplications
   );
   await compareRead(
     "settings.getSettings",

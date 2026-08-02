@@ -26,7 +26,8 @@
         "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-push-subscriptions",
         "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-ig-posts",
         "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-ig-posts/index/*",
-        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-user"
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-user",
+        "arn:aws:dynamodb:ap-southeast-1:052808603534:table/lively-notes-job-applications"
       ]
     }
   ]

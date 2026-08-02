@@ -147,6 +147,29 @@ async function migrateCalendarNotes() {
   };
 }
 
+async function migrateJobApplications() {
+  const docs = await myDB.collection("jobApplications").find({}).toArray();
+  const items = docs.map((doc) => ({
+    id: String(doc._id),
+    company: doc.company,
+    position: doc.position,
+    dateApplied: doc.dateApplied,
+    status: doc.status || "applied",
+    link: doc.link,
+    reference: doc.reference,
+    notes: doc.notes,
+    stages: Array.isArray(doc.stages) ? doc.stages : [],
+    createdAt: createdAtOf(doc),
+    updatedAt: toIso(doc.updatedAt) || createdAtOf(doc),
+  }));
+  await batchPut(TABLES.jobApplications, items);
+  return {
+    collection: "jobApplications",
+    table: TABLES.jobApplications,
+    count: items.length,
+  };
+}
+
 async function migrateSettings() {
   const docs = await myDB.collection("settings").find({}).toArray();
   const items = docs.slice(0, 1).map((doc) => {
@@ -256,6 +279,7 @@ async function tableCount(tableName) {
   results.push(await migrateSections());
   results.push(await migrateTodos());
   results.push(await migrateCalendarNotes());
+  results.push(await migrateJobApplications());
   results.push(await migrateSettings());
   results.push(await migratePushSubscriptions());
   results.push(await migrateIgPosts());

@@ -72,6 +72,10 @@ const registerRoutes = (app) => {
   const calendarNotesRouter = require("./calendarNotes.routes.js");
   app.use(["/api/calendar-notes", "/calendar-notes"], authJWT, calendarNotesRouter);
 
+  // Job Applications Routes
+  const jobApplicationsRouter = require("./jobApplications.routes.js");
+  app.use(["/api/job-applications", "/job-applications"], authJWT, jobApplicationsRouter);
+
   // Push Notification Routes
   const pushRouter = require("./push.routes.js");
   app.use(["/api/push", "/push"], authJWT, pushRouter);

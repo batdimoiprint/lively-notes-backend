@@ -44,7 +44,8 @@ MERGED=$(aws lambda get-function-configuration \
     "DDB_TABLE_SETTINGS": "lively-notes-settings",
     "DDB_TABLE_PUSH_SUBSCRIPTIONS": "lively-notes-push-subscriptions",
     "DDB_TABLE_IG_POSTS": "lively-notes-ig-posts",
-    "DDB_TABLE_USER": "lively-notes-user"
+    "DDB_TABLE_USER": "lively-notes-user",
+    "DDB_TABLE_JOB_APPLICATIONS": "lively-notes-job-applications"
   } | {Variables: .}')
 
 aws lambda update-function-configuration \

@@ -18,6 +18,7 @@ const TABLES = {
   sections: process.env.DDB_TABLE_SECTIONS || "lively-notes-sections",
   todos: process.env.DDB_TABLE_TODOS || "lively-notes-todos",
   calendarNotes: process.env.DDB_TABLE_CALENDAR_NOTES || "lively-notes-calendar-notes",
+  jobApplications: process.env.DDB_TABLE_JOB_APPLICATIONS || "lively-notes-job-applications",
   settings: process.env.DDB_TABLE_SETTINGS || "lively-notes-settings",
   pushSubscriptions: process.env.DDB_TABLE_PUSH_SUBSCRIPTIONS || "lively-notes-push-subscriptions",
   igPosts: process.env.DDB_TABLE_IG_POSTS || "lively-notes-ig-posts",
