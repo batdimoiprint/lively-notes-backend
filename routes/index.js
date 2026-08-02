@@ -74,7 +74,11 @@ const registerRoutes = (app) => {
 
   // Job Applications Routes
   const jobApplicationsRouter = require("./jobApplications.routes.js");
-  app.use(["/api/job-applications", "/job-applications"], authJWT, jobApplicationsRouter);
+  app.use(
+    ["/api/job-applications", "/job-applications", "/api/job-applications/", "/job-applications/"],
+    authJWT,
+    jobApplicationsRouter
+  );
 
   // Push Notification Routes
   const pushRouter = require("./push.routes.js");
