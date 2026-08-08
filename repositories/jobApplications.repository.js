@@ -74,8 +74,9 @@ async function create(job) {
 }
 
 async function update(id, updateFields) {
+  const query = { $or: [{ _id: toMongoId(id) }, { _id: String(id) }] };
   const result = await jobApplicationsCollection.updateOne(
-    { _id: toMongoId(id) },
+    query,
     { $set: updateFields }
   );
 
@@ -83,7 +84,7 @@ async function update(id, updateFields) {
   // as the calendar-notes repository: cheaper than translating partial
   // updates when embedded lists (stages) are involved.
   await bestEffortDynamo("jobApplications.update", async () => {
-    const doc = await jobApplicationsCollection.findOne({ _id: toMongoId(id) });
+    const doc = await jobApplicationsCollection.findOne(query);
     if (!doc) return;
     await docClient.send(
       new PutCommand({
@@ -101,7 +102,7 @@ async function update(id, updateFields) {
 
 async function remove(id) {
   const result = await jobApplicationsCollection.deleteOne({
-    _id: toMongoId(id),
+    $or: [{ _id: toMongoId(id) }, { _id: String(id) }],
   });
 
   if (result.deletedCount > 0) {
