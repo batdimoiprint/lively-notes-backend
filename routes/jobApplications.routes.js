@@ -43,7 +43,7 @@ router.get("/", jobApplicationsController.listJobs);
  *                 example: "2026-08-02"
  *               status:
  *                 type: string
- *                 enum: [applied, screening, interview, offer, rejected, withdrawn]
+ *                 enum: [applied, screening, interview, offer, rejected, withdrawn, viewed, ghosted]
  *               link:
  *                 type: string
  *               reference:
@@ -93,7 +93,7 @@ router.post("/", jobApplicationsController.createJob);
  *                 type: string
  *               status:
  *                 type: string
- *                 enum: [applied, screening, interview, offer, rejected, withdrawn]
+ *                 enum: [applied, screening, interview, offer, rejected, withdrawn, viewed, ghosted]
  *               link:
  *                 type: string
  *               reference:

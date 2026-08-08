@@ -28,10 +28,18 @@ const registerRoutes = (app) => {
   const authRouter = require("./auth.routes.js");
   app.use(["/api/auth", "/auth"], authRouter);
 
+  // Job Applications Routes
+  const jobApplicationsRouter = require("./jobApplications.routes.js");
+  app.use(
+    ["/api/job-applications", "/job-applications", "/api/job-applications/", "/job-applications/"],
+    authJWT,
+    jobApplicationsRouter
+  );
+
   // Notes Routes
   const notesRouter = require("./notes.routes.js");
   app.use(
-    ["/api/notes", "/notes", "/sync-status", "/sync-events", "/sync"],
+    ["/api/notes", "/notes"],
     authJWT,
     notesRouter
   );
@@ -71,14 +79,6 @@ const registerRoutes = (app) => {
   // Calendar Notes Routes
   const calendarNotesRouter = require("./calendarNotes.routes.js");
   app.use(["/api/calendar-notes", "/calendar-notes"], authJWT, calendarNotesRouter);
-
-  // Job Applications Routes
-  const jobApplicationsRouter = require("./jobApplications.routes.js");
-  app.use(
-    ["/api/job-applications", "/job-applications", "/api/job-applications/", "/job-applications/"],
-    authJWT,
-    jobApplicationsRouter
-  );
 
   // Push Notification Routes
   const pushRouter = require("./push.routes.js");

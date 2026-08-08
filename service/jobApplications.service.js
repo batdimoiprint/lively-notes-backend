@@ -9,6 +9,8 @@ const STATUS_VALUES = [
   "offer",
   "rejected",
   "withdrawn",
+  "viewed",
+  "ghosted",
 ];
 
 function isValidStatus(status) {

@@ -39,11 +39,9 @@ app.use(async (req, res, next) => {
 
 // Register Routes
 app.use(authJWT);
+app.use(["/api/job-applications", "/job-applications"], jobApplicationsRouter);
 app.use(["/api/notes", "/notes"], notesRouter);
 app.use(["/api/sections", "/sections"], sectionsRouter);
-app.use(["/api/job-applications", "/job-applications"], jobApplicationsRouter);
-app.use(notesRouter);
-app.use(sectionsRouter);
 
 registerErrorHandlers(app);
 
