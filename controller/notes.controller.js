@@ -56,6 +56,17 @@ async function listNotes(req, res, next) {
   }
 }
 
+async function searchNotes(req, res, next) {
+  try {
+    const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    if (query.length < 2) return res.status(200).json([]);
+    const notes = await notesService.searchNotes(query);
+    res.status(200).json(notes);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function createNote(req, res, next) {
   try {
     const create = await notesService.createNote(req.body);
@@ -146,4 +157,4 @@ async function moveNoteToSection(req, res, next) {
   }
 }
 
-module.exports = { listNotes, createNote, deleteNote, editNotes, reorderNotes, moveNoteToSection };
+module.exports = { listNotes, searchNotes, createNote, deleteNote, editNotes, reorderNotes, moveNoteToSection };

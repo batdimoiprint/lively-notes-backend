@@ -1,6 +1,7 @@
 const notesRepository = require("../repositories/notes.repository.js");
 const { isValidId } = require("../repositories/repository.util.js");
 const { broadcastSyncEvent } = require("./sync.service.js");
+const sectionsRepository = require("../repositories/sections.repository.js");
 
 async function getAll() {
   return notesRepository.getAll();
@@ -8,6 +9,18 @@ async function getAll() {
 
 async function getBySection(sectionId) {
   return notesRepository.getBySection(sectionId);
+}
+
+async function searchNotes(query) {
+  const [notes, sections] = await Promise.all([
+    notesRepository.search(query),
+    sectionsRepository.getAll(),
+  ]);
+  const sectionTitles = new Map(sections.map((section) => [section._id, section.title]));
+  return notes.map((note) => ({
+    ...note,
+    sectionTitle: sectionTitles.get(note.sectionId || "default") || "Notes",
+  }));
 }
 
 async function createNote(payload) {
@@ -76,6 +89,7 @@ async function moveToSection(noteId, sectionId) {
 module.exports = {
   getAll,
   getBySection,
+  searchNotes,
   createNote,
   deleteNote,
   updateNote,

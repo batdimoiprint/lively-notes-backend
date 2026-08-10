@@ -52,6 +52,18 @@ async function getBySection(sectionId) {
   return cursor.toArray();
 }
 
+async function search(query) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  if (!normalizedQuery) return [];
+
+  const notes = await getAll();
+  return notes.filter((note) =>
+    [note.title, note.body].some((value) =>
+      String(value || "").toLocaleLowerCase().includes(normalizedQuery)
+    )
+  );
+}
+
 async function create(payload) {
   const _id = newId();
   const note = {
@@ -268,6 +280,7 @@ async function updateOrder(orderedIds) {
 module.exports = {
   getAll,
   getBySection,
+  search,
   create,
   update,
   remove,

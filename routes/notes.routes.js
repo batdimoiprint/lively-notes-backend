@@ -48,6 +48,7 @@ router.get(
  *                     type: string
  *                     example: "Note content"
  */
+router.get("/search", notesController.searchNotes);
 router.get("/", notesController.listNotes);
 
 /**
