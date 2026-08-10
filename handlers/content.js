@@ -20,21 +20,26 @@ const jobApplicationsRouter = require("../routes/jobApplications.routes.js");
 
 const syncService = require("../service/sync.service");
 
-// Global Sync Realtime Interceptor (bypasses express router matching quirks)
+// Global Sync Realtime Interceptor (bypasses express router matching quirks).
+// Gated behind authJWT — this endpoint reveals record ids/domains/timestamps
+// and must not be public.
 app.use(async (req, res, next) => {
   const fullUrl = req.originalUrl || req.url || "";
   const isSyncStatus = fullUrl.includes("sync=status") || fullUrl.includes("sync-status");
   const isSyncEvents = fullUrl.includes("sync=events") || fullUrl.includes("sync-events");
 
-  if (isSyncStatus) {
-    const status = await syncService.getSyncStatus();
-    return res.status(200).json(status);
+  if (!isSyncStatus && !isSyncEvents) {
+    return next();
   }
-  if (isSyncEvents) {
+
+  return authJWT(req, res, async () => {
+    if (isSyncStatus) {
+      const status = await syncService.getSyncStatus();
+      return res.status(200).json(status);
+    }
     const userId = req.user?.userId || req.user?.id || "global_user";
     return syncService.registerSyncStream(userId, res);
-  }
-  next();
+  });
 });
 
 // Register Routes
