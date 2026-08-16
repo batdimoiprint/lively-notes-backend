@@ -41,6 +41,10 @@ router.get("/", jobApplicationsController.listJobs);
  *               dateApplied:
  *                 type: string
  *                 example: "2026-08-02"
+ *               preferredRank:
+ *                 type: integer
+ *                 nullable: true
+ *                 example: 1
  *               status:
  *                 type: string
  *                 enum: [applied, screening, interview, offer, rejected, withdrawn, viewed, ghosted]
@@ -91,6 +95,10 @@ router.post("/", jobApplicationsController.createJob);
  *                 type: string
  *               dateApplied:
  *                 type: string
+ *               preferredRank:
+ *                 type: integer
+ *                 nullable: true
+ *                 example: 1
  *               status:
  *                 type: string
  *                 enum: [applied, screening, interview, offer, rejected, withdrawn, viewed, ghosted]

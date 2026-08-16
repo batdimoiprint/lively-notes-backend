@@ -48,6 +48,7 @@ async function createJob(payload) {
     company: payload.company,
     position: payload.position,
     dateApplied: payload.dateApplied, // "YYYY-MM-DD"
+    preferredRank: payload.preferredRank !== undefined ? payload.preferredRank : null,
     status: payload.status || "applied",
     link: payload.link || "",
     reference: payload.reference || "",
@@ -69,6 +70,7 @@ async function updateJob(payload) {
   if (payload.company !== undefined) updateFields.company = payload.company;
   if (payload.position !== undefined) updateFields.position = payload.position;
   if (payload.dateApplied !== undefined) updateFields.dateApplied = payload.dateApplied;
+  if (payload.preferredRank !== undefined) updateFields.preferredRank = payload.preferredRank;
   if (payload.status !== undefined) updateFields.status = payload.status || "applied";
   if (payload.link !== undefined) updateFields.link = payload.link;
   if (payload.reference !== undefined) updateFields.reference = payload.reference;

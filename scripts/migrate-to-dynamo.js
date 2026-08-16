@@ -154,6 +154,7 @@ async function migrateJobApplications() {
     company: doc.company,
     position: doc.position,
     dateApplied: doc.dateApplied,
+    preferredRank: doc.preferredRank !== undefined ? doc.preferredRank : null,
     status: doc.status || "applied",
     link: doc.link,
     reference: doc.reference,

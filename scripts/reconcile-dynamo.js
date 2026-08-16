@@ -91,6 +91,7 @@ const normalizers = {
     company: d.company,
     position: d.position,
     dateApplied: d.dateApplied,
+    preferredRank: d.preferredRank ?? null,
     status: d.status || "applied",
     link: d.link ?? undefined,
     reference: d.reference ?? undefined,
